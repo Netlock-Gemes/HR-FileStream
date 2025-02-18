@@ -1,0 +1,159 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>HRWells | {{file_name}}</title>
+    <link
+      rel="icon"
+      href="https://i.ibb.co/Hh4kF2b/icon.png"
+      type="image/x-icon"
+    />
+    <link
+      rel="shortcut icon"
+      href="https://i.ibb.co/Hh4kF2b/icon.png"
+      type="image/x-icon"
+    />
+    <!-- Tailwind CSS CDN -->
+    <script src="https://cdn.tailwindcss.com"></script>
+  </head>
+  <body class="bg-[#0e0c1d] text-gray-100">
+    <!-- Navbar -->
+    <nav class="flex justify-between items-center bg-[#0e0c1d] px-6 py-4">
+      <div class="text-gray-100 text-2xl font-bold mx-auto">
+        HRWells' Video Stream
+      </div>
+    </nav>
+
+    <!-- Video Player Section -->
+    <div id="main" class="w-full flex flex-col shadow-lg">
+      <div class="bg-black w-full border-y-[0.03rem] border-blue-500">
+        <video
+          id="player"
+          class="w-full max-h-[75vh]"
+          src="{{file_url}}"
+          controls
+        ></video>
+      </div>
+      <div class="p-4">
+        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6">
+          <div class="flex space-x-2">
+            <span class="font-semibold shrink-0">File Name:</span>
+            <span id="myDiv" class="text-gray-200">{{file_name}}</span>
+          </div>
+          <div class="flex items-center space-x-2 mt-2 sm:mt-0">
+            <span class="font-semibold">File Size:</span>
+            <span class="text-gray-200">{{file_size}}</span>
+          </div>
+        </div>
+
+        <!-- Buttons -->
+        <div
+          class="mt-4 flex flex-wrap gap-y-3 justify-around md:justify-start md:gap-3"
+        >
+          <button
+            onclick="streamDownload()"
+            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
+          >
+            <img
+              src="https://i.ibb.co/RjzYttX/dl.png"
+              class="h-6 mr-2"
+              alt="Download"
+            />
+            Download Video
+          </button>
+          <button
+            onclick="copyStreamLink()"
+            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
+          >
+            <img
+              src="https://i.ibb.co/CM4Y586/link.png"
+              class="h-6 mr-2"
+              alt="Copy Link"
+            />
+            Copy Link
+          </button>
+          <button
+            onclick="vlc_player()"
+            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
+          >
+            <img
+              src="https://i.ibb.co/px6fQs1/vlc.png"
+              class="h-6 mr-2"
+              alt="VLC Player"
+            />
+            Watch in VLC
+          </button>
+          <button
+            onclick="mx_player()"
+            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
+          >
+            <img
+              src="https://i.ibb.co/41WvtQ3/mx.png"
+              class="h-6 mr-2"
+              alt="MX Player"
+            />
+            Watch in MX
+          </button>
+          <button
+            onclick="n_player()"
+            class="flex w-fit items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
+          >
+            <img
+              src="https://i.ibb.co/Hd2dS4t/nPlayer.png"
+              class="h-6 mr-2"
+              alt="nPlayer"
+            />
+            Watch in nPlayer
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      function streamDownload() {
+        const videoUrl = "{{file_url}}";
+        const anchor = document.createElement("a");
+        anchor.href = videoUrl;
+        anchor.download = "{{file_name}}";
+        document.body.appendChild(anchor);
+        anchor.click();
+        document.body.removeChild(anchor);
+      }
+
+      async function copyStreamLink() {
+        const videoUrl = "{{file_url}}";
+        try {
+          await navigator.clipboard.writeText(videoUrl);
+          alert("Link copied to clipboard!");
+        } catch (err) {
+          console.error("Clipboard write failed, using fallback: ", err);
+
+          const tempInput = document.createElement("input");
+          document.body.appendChild(tempInput);
+          tempInput.value = videoUrl;
+          tempInput.select();
+          document.execCommand("copy");
+          document.body.removeChild(tempInput);
+
+          alert("Link copied!");
+        }
+      }
+
+      function vlc_player() {
+        const videoUrl = "{{file_url}}";
+        window.location.href = `vlc://${videoUrl}`;
+      }
+
+      function mx_player() {
+        const videoUrl = "{{file_url}}";
+        window.location.href = `intent:${videoUrl}#Intent;package=com.mxtech.videoplayer.ad;type=video/mp4;end`;
+      }
+
+      function n_player() {
+        const videoUrl = "{{file_url}}";
+        window.location.href = `nplayer-${videoUrl}`;
+      }
+    </script>
+  </body>
+</html>
