@@ -104,10 +104,8 @@
   },
   "buildpacks": [
     {
-      "url": "heroku/python"
     }
   ],
-  "stack": "heroku-22",
   "formation": {
     "web": {
       "quantity": 1,
