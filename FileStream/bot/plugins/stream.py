@@ -49,8 +49,9 @@ async def private_receive_handler(bot: Client, message: Message):
         print(f"Sleeping for {str(e.value)}s")
         await asyncio.sleep(e.value)
         await bot.send_message(chat_id=Telegram.ULOG_CHANNEL,
-                               text=f"Gᴏᴛ FʟᴏᴏᴅWᴀɪᴛ ᴏғ {str(e.value)}s ғʀᴏᴍ [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n\n**ᴜsᴇʀ ɪᴅ :** `{str(message.from_user.id)}`",
-                               disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN)
+                       text=f"Got Floodwait of {str(e.value)}s from [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n\n**User ID :** `{str(message.from_user.id)}`",
+                       disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN)
+
 
 
 @FileStream.on_message(
@@ -79,7 +80,7 @@ async def channel_receive_handler(bot: Client, message: Message):
             chat_id=message.chat.id,
             message_id=message.id,
             reply_markup=InlineKeyboardMarkup(
-                [[InlineKeyboardButton("Dᴏᴡɴʟᴏᴀᴅ ʟɪɴᴋ 📥",
+                [[InlineKeyboardButton("Download Link 📥",
                                        url=f"https://t.me/{FileStream.username}?start=stream_{str(inserted_id)}")]])
         )
 
@@ -87,10 +88,10 @@ async def channel_receive_handler(bot: Client, message: Message):
         print(f"Sleeping for {str(w.x)}s")
         await asyncio.sleep(w.x)
         await bot.send_message(chat_id=Telegram.ULOG_CHANNEL,
-                               text=f"ɢᴏᴛ ғʟᴏᴏᴅᴡᴀɪᴛ ᴏғ {str(w.x)}s ғʀᴏᴍ {message.chat.title}\n\n**ᴄʜᴀɴɴᴇʟ ɪᴅ :** `{str(message.chat.id)}`",
+                               text = f"Got floodwait of {str(w.x)}s from {message.chat.title}\n\n**Channel ID :** `{str(message.chat.id)}`",
                                disable_web_page_preview=True)
     except Exception as e:
-        await bot.send_message(chat_id=Telegram.ULOG_CHANNEL, text=f"**#EʀʀᴏʀTʀᴀᴄᴋᴇʙᴀᴄᴋ:** `{e}`",
+        await bot.send_message(chat_id=Telegram.ULOG_CHANNEL, text=f"**#ErrrorTrackback:** `{e}`",
                                disable_web_page_preview=True)
-        print(f"Cᴀɴ'ᴛ Eᴅɪᴛ Bʀᴏᴀᴅᴄᴀsᴛ Mᴇssᴀɢᴇ!\nEʀʀᴏʀ:  **Gɪᴠᴇ ᴍᴇ ᴇᴅɪᴛ ᴘᴇʀᴍɪssɪᴏɴ ɪɴ ᴜᴘᴅᴀᴛᴇs ᴀɴᴅ ʙɪɴ Cʜᴀɴɴᴇʟ!{e}**")
+        print(f"Can't Edit Broadcast Message!\Error:  **Give me edit permission in updates and bin Channel{e}**")
 

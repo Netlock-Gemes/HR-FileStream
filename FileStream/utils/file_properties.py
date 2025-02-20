@@ -132,11 +132,11 @@ async def send_file(client: Client, db_id, file_id: str, message):
 
     if message.chat.type == ChatType.PRIVATE:
         await log_msg.reply_text(
-            text=f"**RᴇQᴜᴇꜱᴛᴇᴅ ʙʏ :** [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n**Uꜱᴇʀ ɪᴅ :** `{message.from_user.id}`\n**Fɪʟᴇ ɪᴅ :** `{db_id}`",
+            text=f"**Requested By :** [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n**User ID :** `{message.from_user.id}`\n**File ID :** `{db_id}`",
             disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN, quote=True)
     else:
         await log_msg.reply_text(
-            text=f"**RᴇQᴜᴇꜱᴛᴇᴅ ʙʏ :** {message.chat.title} \n**Cʜᴀɴɴᴇʟ ɪᴅ :** `{message.chat.id}`\n**Fɪʟᴇ ɪᴅ :** `{db_id}`",
+            text=f"**Requested By :** {message.chat.title} \n**Channel ID :** `{message.chat.id}`\n**File ID :** `{db_id}`",
             disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN, quote=True)
 
     return log_msg

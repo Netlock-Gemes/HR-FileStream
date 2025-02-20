@@ -139,11 +139,11 @@ async def my_files(bot: Client, message: Message):
         )
     if not file_list:
         file_list.append(
-            [InlineKeyboardButton("ᴇᴍᴘᴛʏ", callback_data="N/A")],
+            [InlineKeyboardButton("Empty", callback_data="N/A")],
         )
-    file_list.append([InlineKeyboardButton("ᴄʟᴏsᴇ", callback_data="close")])
+    file_list.append([InlineKeyboardButton("❌ Close", callback_data="close")])
     await message.reply_photo(photo=Telegram.FILE_PIC,
-                              caption="Total files: {}".format(total_files),
+                              caption="**📁 Total files:** {}".format(total_files),
                               reply_markup=InlineKeyboardMarkup(file_list))
 
 

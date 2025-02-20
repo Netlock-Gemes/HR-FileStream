@@ -96,15 +96,15 @@
             Watch in MX
           </button>
           <button
-            onclick="n_player()"
+            onclick="mx_player_pro()"
             class="flex w-fit items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
           >
             <img
-              src="https://i.ibb.co/Hd2dS4t/nPlayer.png"
+              src="https://i.ibb.co/41WvtQ3/mx.png"
               class="h-6 mr-2"
-              alt="nPlayer"
+              alt="MX Player Pro"
             />
-            Watch in nPlayer
+            Watch in MX Player Pro
           </button>
         </div>
       </div>
@@ -150,10 +150,11 @@
         window.location.href = `intent:${videoUrl}#Intent;package=com.mxtech.videoplayer.ad;type=video/mp4;end`;
       }
 
-      function n_player() {
+      function mx_player_pro() {
         const videoUrl = "{{file_url}}";
-        window.location.href = `nplayer-${videoUrl}`;
+        window.location.href = `intent:${videoUrl}#Intent;package=com.mxtech.videoplayer.pro;type=video/mp4;end`;
       }
+
     </script>
   </body>
 </html>

@@ -1,72 +1,112 @@
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton
 from FileStream.config import Telegram
 
+
 class LANG(object):
 
     START_TEXT = """
-<b>👋 Hᴇʏ, </b>{}\n 
-<b>I'ᴍ ᴛᴇʟᴇɢʀᴀᴍ ғɪʟᴇs sᴛʀᴇᴀᴍɪɴɢ ʙᴏᴛ ᴀs ᴡᴇʟʟ ᴅɪʀᴇᴄᴛ ʟɪɴᴋs ɢᴇɴᴇʀᴀᴛᴏʀ</b>\n
-<b>ᴡᴏʀᴋɪɴɢ ᴏɴ ᴄʜᴀɴɴᴇʟs ᴀɴᴅ ᴘʀɪᴠᴀᴛᴇ ᴄʜᴀᴛ</b>\n
-<b>💕 @{}</b>\n"""
+<b>👋 Hello, {}!</b>
+
+I'm a powerful Telegram bot that allows you to stream files directly and generate shareable download links.
+
+✨ <b>Features:</b>
+   ├ Stream videos online
+   ├ Get instant direct download links
+   ├ Works in both private chats & channels
+
+🤖 You Are using <b>@{}</b>
+"""
 
     HELP_TEXT = """
-<b>- ᴀᴅᴅ ᴍᴇ ᴀs ᴀɴ ᴀᴅᴍɪɴ ᴏɴ ᴛʜᴇ ᴄʜᴀɴɴᴇʟ</b>
-<b>- sᴇɴᴅ ᴍᴇ ᴀɴʏ ᴅᴏᴄᴜᴍᴇɴᴛ ᴏʀ ᴍᴇᴅɪᴀ</b>
-<b>- ɪ'ʟʟ ᴘʀᴏᴠɪᴅᴇ sᴛʀᴇᴀᴍᴀʙʟᴇ ʟɪɴᴋ</b>\n
-<b>🔞 ᴀᴅᴜʟᴛ ᴄᴏɴᴛᴇɴᴛ sᴛʀɪᴄᴛʟʏ ᴘʀᴏʜɪʙɪᴛᴇᴅ.</b>\n
-<i><b> ʀᴇᴘᴏʀᴛ ʙᴜɢs ᴛᴏ <a href='https://telegram.me/AvishkarPatil'>ᴅᴇᴠᴇʟᴏᴘᴇʀ</a></b></i>"""
+<b>🚀 How to Use:</b>
+
+1️⃣ Add me as an <b>admin</b> in your channel.
+2️⃣ Send me any <b>document, video, or media file.</b>
+3️⃣ I’ll generate a <b>streamable link</b> instantly!
+
+🔞 <b>Strictly No Adult Content!</b>
+
+🔧 Found a bug? <a href='https://telegram.me/H_R_Wells'>Report to Developer</a>.
+"""
 
     ABOUT_TEXT = """
-<b>⚜ ᴍʏ ɴᴀᴍᴇ : {}</b>\n
-<b>✦ ᴠᴇʀsɪᴏɴ : {}</b>
-<b>✦ ᴜᴘᴅᴀᴛᴇᴅ ᴏɴ : 06-January-2024</b>
-<b>✦ ᴅᴇᴠᴇʟᴏᴘᴇʀ : <a href='https://telegram.me/AvishkarPatil'>Avishkar Patil</a></b>\n
+<b>🤖 Bot Name:</b> {}
+<b>📌 Version:</b> {}
+<b>📅 Last Updated:</b> 20-February-2025
+<b>👨‍💻 Developer:</b> <a href='https://telegram.me/H_R_Wells'>HR Wells</a>
 """
 
     STREAM_TEXT = """
-<i><u>𝗬𝗼𝘂𝗿 𝗟𝗶𝗻𝗸 𝗚𝗲𝗻𝗲𝗿𝗮𝘁𝗲𝗱 !</u></i>\n
-<b>📂 Fɪʟᴇ ɴᴀᴍᴇ :</b> <b>{}</b>\n
-<b>📦 Fɪʟᴇ ꜱɪᴢᴇ :</b> <code>{}</code>\n
-<b>📥 Dᴏᴡɴʟᴏᴀᴅ :</b> <code>{}</code>\n
-<b>🖥 Wᴀᴛᴄʜ :</b> <code>{}</code>\n
-<b>🔗 Sʜᴀʀᴇ :</b> <code>{}</code>\n"""
+<b><u>Your Link Generated!</u></b>
+
+📂 <b>File Name : </b> {}
+
+📦 <b>File Size : </b> <code>{}</code>
+
+📥 <b>Download : </b> <code>{}</code>
+
+🖥 <b>Watch Online : </b> <code>{}</code>
+
+🔗 <b>Share Link : </b> <code>{}</code>
+"""
 
     STREAM_TEXT_X = """
-<i><u>𝗬𝗼𝘂𝗿 𝗟𝗶𝗻𝗸 𝗚𝗲𝗻𝗲𝗿𝗮𝘁𝗲𝗱 !</u></i>\n
-<b>📂 Fɪʟᴇ ɴᴀᴍᴇ :</b> <b>{}</b>\n
-<b>📦 Fɪʟᴇ ꜱɪᴢᴇ :</b> <code>{}</code>\n
-<b>📥 Dᴏᴡɴʟᴏᴀᴅ :</b> <code>{}</code>\n
-<b>🔗 Sʜᴀʀᴇ :</b> <code>{}</code>\n"""
+<b><u>Your Link Generated!</u></b>
 
+📂 <b>File Name : </b> {}
 
-    BAN_TEXT = "__Sᴏʀʀʏ Sɪʀ, Yᴏᴜ ᴀʀᴇ Bᴀɴɴᴇᴅ ᴛᴏ ᴜsᴇ ᴍᴇ.__\n\n**[Cᴏɴᴛᴀᴄᴛ Dᴇᴠᴇʟᴏᴘᴇʀ](tg://user?id={}) Tʜᴇʏ Wɪʟʟ Hᴇʟᴘ Yᴏᴜ**"
+📦 <b>File Size : </b> <code>{}</code>
+
+📥 <b>Download : </b> <code>{}</code>
+
+🔗 <b>Share : </b> <code>{}</code>
+"""
+
+    BAN_TEXT = """
+🚫 <b>Access Denied</b>
+
+Sorry, you have been banned from using this bot.
+
+🔹 Need help? Contact the <a href='tg://user?id={}'>Developer</a>.
+"""
 
 
 class BUTTON(object):
     START_BUTTONS = InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'),
-            InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about'),
-            InlineKeyboardButton('ᴄʟᴏsᴇ', callback_data='close')
-        ],
-            [InlineKeyboardButton("📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ", url=f'https://t.me/{Telegram.UPDATES_CHANNEL}')]
+        [
+            [
+                InlineKeyboardButton("❓ Help", callback_data="help"),
+                InlineKeyboardButton("ℹ️ About", callback_data="about"),
+                InlineKeyboardButton("❌ Close", callback_data="close"),
+            ],
+            [
+                InlineKeyboardButton("📢 Updates Channel", url=f"https://t.me/{Telegram.UPDATES_CHANNEL}")
+            ],
         ]
     )
+
     HELP_BUTTONS = InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
-            InlineKeyboardButton('ᴀʙᴏᴜᴛ', callback_data='about'),
-            InlineKeyboardButton('ᴄʟᴏsᴇ', callback_data='close'),
-        ],
-            [InlineKeyboardButton("📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ", url=f'https://t.me/{Telegram.UPDATES_CHANNEL}')]
+        [
+            [
+                InlineKeyboardButton("🏠 Home", callback_data="home"),
+                InlineKeyboardButton("ℹ️ About", callback_data="about"),
+                InlineKeyboardButton("❌ Close", callback_data="close"),
+            ],
+            [
+                InlineKeyboardButton("📢 Updates Channel", url=f"https://t.me/{Telegram.UPDATES_CHANNEL}")
+            ],
         ]
     )
+
     ABOUT_BUTTONS = InlineKeyboardMarkup(
-        [[
-            InlineKeyboardButton('ʜᴏᴍᴇ', callback_data='home'),
-            InlineKeyboardButton('ʜᴇʟᴘ', callback_data='help'),
-            InlineKeyboardButton('ᴄʟᴏsᴇ', callback_data='close'),
-        ],
-            [InlineKeyboardButton("📢 ᴜᴘᴅᴀᴛᴇ ᴄʜᴀɴɴᴇʟ", url=f'https://t.me/{Telegram.UPDATES_CHANNEL}')]
+        [
+            [
+                InlineKeyboardButton("🏠 Home", callback_data="home"),
+                InlineKeyboardButton("❓ Help", callback_data="help"),
+                InlineKeyboardButton("❌ Close", callback_data="close"),
+            ],
+            [
+                InlineKeyboardButton("📢 Updates Channel", url=f"https://t.me/{Telegram.UPDATES_CHANNEL}")
+            ],
         ]
     )
