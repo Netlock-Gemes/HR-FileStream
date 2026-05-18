@@ -43,6 +43,20 @@ async def stream_handler(request: web.Request):
     except (AttributeError, BadStatusLine, ConnectionResetError):
         pass
 
+@routes.get("/mx/{path}", allow_head=True)
+async def mx_route_handler(request: web.Request):
+    try:
+        path = request.match_info["path"]
+        return web.Response(
+            text=await render_page(path, template="mx.html"),
+            content_type='text/html'
+        )
+
+    except InvalidHash as e:
+        raise web.HTTPForbidden(text=e.message)
+
+    except FIleNotFound as e:
+        raise web.HTTPNotFound(text=e.message)
 
 @routes.get("/dl/{path}", allow_head=True)
 async def stream_handler(request: web.Request):

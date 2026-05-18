@@ -59,7 +59,7 @@ I'm a powerful Telegram bot that allows you to stream files directly and generat
 
 📥 <b>Download : </b> <code>{}</code>
 
-🔗 <b>Share : </b> <code>{}</code>
+🖥 <b>Watch Online : </b> <code>{}</code>
 """
 
     BAN_TEXT = """

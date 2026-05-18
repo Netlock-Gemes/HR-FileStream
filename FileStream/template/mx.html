@@ -1,0 +1,101 @@
+<!-- template/mx.html -->
+
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+
+  <meta
+    name="viewport"
+    content="width=device-width, initial-scale=1.0"
+  />
+
+  <title>Opening MX Player Pro...</title>
+
+  <style>
+    *{
+      margin:0;
+      padding:0;
+      box-sizing:border-box;
+      font-family:Arial,sans-serif;
+    }
+
+    body{
+      background:#070b14;
+      color:white;
+      height:100vh;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      text-align:center;
+      padding:20px;
+    }
+
+    .box{
+      max-width:400px;
+    }
+
+    .loader{
+      width:60px;
+      height:60px;
+      border:4px solid rgba(255,255,255,.1);
+      border-top:4px solid #8b5cf6;
+      border-radius:50%;
+      margin:0 auto 25px;
+      animation:spin 1s linear infinite;
+    }
+
+    h2{
+      margin-bottom:12px;
+      font-size:28px;
+    }
+
+    p{
+      color:#9ca3af;
+      line-height:1.6;
+    }
+
+    @keyframes spin{
+      100%{
+        transform:rotate(360deg);
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+  <div class="box">
+
+    <div class="loader"></div>
+
+    <h2>Opening MX Player Pro...</h2>
+
+    <p>
+      Please wait while your video launches in MX Player Pro.
+    </p>
+
+  </div>
+
+  <script>
+
+    const streamUrl = "{{file_url}}";
+
+    const intentUrl =
+      `intent:${streamUrl}` +
+      "#Intent;" +
+      "package=com.mxtech.videoplayer.pro;" +
+      "type=video/mp4;" +
+      "end";
+
+    window.location.href = intentUrl;
+
+    // fallback
+    setTimeout(() => {
+      window.location.href = streamUrl;
+    }, 3000);
+
+  </script>
+
+</body>
+</html>

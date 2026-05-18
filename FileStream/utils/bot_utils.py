@@ -87,6 +87,7 @@ async def gen_link(_id):
 
     page_link = f"{Server.URL}watch/{_id}"
     stream_link = f"{Server.URL}dl/{_id}"
+    mx_link = f"{Server.URL}mx/{_id}"
     file_link = f"https://t.me/{FileStream.username}?start=file_{_id}"
 
     if "video" in mime_type:
@@ -95,11 +96,11 @@ async def gen_link(_id):
             [
                 [InlineKeyboardButton("🖥 Stream", url=page_link), InlineKeyboardButton("📥 Download", url=stream_link)],
                 [InlineKeyboardButton("📂 Get File", url=file_link), InlineKeyboardButton("🚫 Revoke File", callback_data=f"msgdelpvt_{_id}")],
-                [InlineKeyboardButton("❌ Close", callback_data="close")]
+                [InlineKeyboardButton("🎬 Watch in MX", url=mx_link), InlineKeyboardButton("❌ Close", callback_data="close")]
             ]
         )
     else:
-        stream_text = LANG.STREAM_TEXT_X.format(file_name, file_size, stream_link, file_link)
+        stream_text = LANG.STREAM_TEXT_X.format(file_name, file_size, stream_link, page_link)
         reply_markup = InlineKeyboardMarkup(
             [
                 [InlineKeyboardButton("📥 Download", url=stream_link)],
