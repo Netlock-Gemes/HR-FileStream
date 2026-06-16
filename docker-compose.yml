@@ -1,0 +1,19 @@
+services:
+  hr-filestream:
+    container_name: hr-filestream
+
+    build: .
+
+    restart: unless-stopped
+
+    env_file:
+      - .env.prod
+
+    ports:
+      - "127.0.0.1:8080:8080"
+
+    logging:
+      driver: json-file
+      options:
+        max-size: "10m"
+        max-file: "3"
