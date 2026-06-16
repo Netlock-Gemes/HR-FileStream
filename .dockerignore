@@ -1,0 +1,16 @@
+venv
+__pycache__
+*.pyc
+
+.git
+.gitignore
+.gitattributes
+
+.env
+.env.*
+
+streambot.log
+
+README.md
+Procfile
+app.json
