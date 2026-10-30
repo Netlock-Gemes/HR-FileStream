@@ -1,3 +1,4 @@
+import os
 import re
 import time
 import logging
@@ -56,6 +57,13 @@ async def mx_route_handler(request: web.Request):
 
     except FIleNotFound as e:
         raise web.HTTPNotFound(text=e.message)
+
+@routes.get(r"/assets/{name:[\w-]+\.woff2}", allow_head=True)
+async def asset_route_handler(request: web.Request):
+    path = f"FileStream/template/assets/{request.match_info['name']}"
+    if not os.path.exists(path):
+        raise web.HTTPNotFound()
+    return web.FileResponse(path, headers={"Content-Type": "font/woff2", "Cache-Control": "public, max-age=31536000, immutable"})
 
 # The optional name gives players a file extension to read the format from
 @routes.get("/dl/{path}/{name}", allow_head=True)

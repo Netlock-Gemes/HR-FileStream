@@ -1,3 +1,4 @@
+import os
 import jinja2
 import urllib.parse
 
@@ -19,12 +20,18 @@ async def render_page(db_id, template=None):
     file_data = await db.get_file(db_id)
     mime_type = file_data['mime_type'] or ""
 
+    name = file_data['file_name'].replace("_", " ")
+    if mime_type.startswith("video/"):
+        name = os.path.splitext(name)[0]
+
     if not template:
         template = "play.html" if mime_type.startswith("video/") else "dl.html"
 
     return render_file(
         template,
-        file_name=file_data.get('title') or file_data['file_name'].replace("_", " "),
+        file_name=file_data.get('title') or name,
         file_url=urllib.parse.urljoin(Server.URL, f'dl/{file_data["_id"]}'),
         file_size=humanbytes(file_data['file_size']),
+        poster=f"/poster/{file_data['_id']}.jpg" if file_data.get("library") else None,
+        cast=file_data.get("cast") or [],
     )

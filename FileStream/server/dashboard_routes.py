@@ -134,7 +134,7 @@ async def overview(_: web.Request):
     totals = await db.library_totals()
     return web.json_response({
         "videos": totals["videos"],
-        "size": humanbytes(totals["bytes"]),
+        "size": humanbytes(totals["bytes"]) or "0 B",
         "uncast": await db.count_library(db.library_query({"cast": {"$size": 0}}, hidden=None)),
         "hidden": await db.count_library(db.library_query(hidden=True)),
         "addon_url": f"{Server.URL}stremio/{Server.ADDON_TOKEN}/manifest.json" if Server.ADDON_TOKEN else "",
