@@ -136,6 +136,7 @@ async def overview(_: web.Request):
         "videos": totals["videos"],
         "size": humanbytes(totals["bytes"]) or "0 B",
         "uncast": await db.count_library(db.library_query({"cast": {"$size": 0}}, hidden=None)),
+        "cast": len(await db.list_cast()),
         "hidden": await db.count_library(db.library_query(hidden=True)),
         "addon_url": f"{Server.URL}stremio/{Server.ADDON_TOKEN}/manifest.json" if Server.ADDON_TOKEN else "",
         "sorts": list(SORTS),
@@ -153,7 +154,6 @@ def to_item(file_data: dict) -> dict:
         "file_name": file_data["file_name"],
         "cast": file_data.get("cast") or [],
         "tags": file_data.get("tags") or [],
-        "catalogs": file_data.get("catalogs") or [],
         "hidden": bool(file_data.get("hidden")),
         "poster": poster_url(file_data, absolute=False),
         "poster_custom": bool(file_data.get("poster_custom")),
@@ -209,8 +209,6 @@ async def update_media(request: web.Request):
         fields["tags"] = parse_names(data["tags"])
     if "hidden" in data:
         fields["hidden"] = bool(data["hidden"])
-    if "catalogs" in data:
-        fields["catalogs"] = [str(catalog) for catalog in data["catalogs"]]
     if "cast" in data:
         cast = parse_names(data["cast"])
         await ensure_people(cast)
@@ -234,6 +232,29 @@ async def ensure_people(names: list) -> None:
 
 async def connect_person(person: dict) -> int:
     return await db.match_person(person["name"], person_terms(person))
+
+
+@routes.get(API + "/media/{id}/catalogs")
+async def media_catalogs(request: web.Request):
+    _id = object_id(request.match_info["id"])
+    file_data = await db.get_library_file(_id)
+    return web.json_response({"catalogs": [{
+        "id": catalog["_id"],
+        "name": catalog["name"],
+        "member": await db.in_catalog(_id, catalog),
+        "picked": catalog["_id"] in file_data.get("catalogs", []),
+        "all": bool(catalog.get("all")),
+    } for catalog in await db.list_catalogs()]})
+
+
+@routes.post(API + "/media/{id}/catalogs")
+async def set_media_catalog(request: web.Request):
+    _id = object_id(request.match_info["id"])
+    data = await read_json(request)
+    await db.get_library_file(_id)
+    await db.get_catalog(data.get("catalog"))
+    await db.set_catalog_member([_id], data["catalog"], bool(data.get("member")))
+    return web.json_response({"ok": True})
 
 
 @routes.put(API + "/media/{id}/poster")
@@ -280,9 +301,10 @@ async def bulk_media(request: web.Request):
         await db.update_library_many(ids, {"$addToSet": {"cast": {"$each": names}}, "$pull": {"cast_removed": {"$in": names}}})
     elif action == "add_catalog":
         await db.get_catalog(data.get("value"))
-        await db.update_library_many(ids, {"$addToSet": {"catalogs": data["value"]}})
+        await db.set_catalog_member(ids, data["value"], True)
     elif action == "remove_catalog":
-        await db.update_library_many(ids, {"$pull": {"catalogs": data.get("value")}})
+        await db.get_catalog(data.get("value"))
+        await db.set_catalog_member(ids, data["value"], False)
     elif action in ("hide", "show"):
         await db.update_library_many(ids, {"$set": {"hidden": action == "hide"}})
     elif action == "delete":
@@ -411,6 +433,8 @@ async def to_catalog(catalog: dict) -> dict:
         "keywords": catalog.get("keywords", []),
         "channels": catalog.get("channels", []),
         "videos": await db.count_library(query),
+        "removed": await db.count_excluded(catalog["_id"]),
+        "previews": [poster_url(file_data, absolute=False) for file_data in await db.find_library(query, sort=catalog.get("sort", "newest"), limit=4)],
     }
 
 
@@ -452,6 +476,14 @@ async def reorder_catalogs(request: web.Request):
     for order, _id in enumerate(data.get("ids", [])):
         await db.update_catalog(str(_id), {"order": order})
     await db.bump_addon_revision()
+    return web.json_response({"ok": True})
+
+
+@routes.post(API + "/catalogs/{id}/restore")
+async def restore_catalog(request: web.Request):
+    _id = request.match_info["id"]
+    await db.get_catalog(_id)
+    await db.restore_excluded(_id)
     return web.json_response({"ok": True})
 
 

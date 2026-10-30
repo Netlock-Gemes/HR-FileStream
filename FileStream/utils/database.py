@@ -182,9 +182,10 @@ class Database:
 
     @staticmethod
     def catalog_query(catalog):
-        """A video is in a catalog if it was picked by hand or passes every rule set."""
+        """A video is in a catalog if it was picked or passes every rule, unless it was taken out."""
+        kept = {"catalogs_excluded": {"$ne": catalog["_id"]}}
         if catalog.get("all"):
-            return {}
+            return kept
         rules = []
         if catalog.get("cast"):
             rules.append({"cast": {"$in": catalog["cast"]}})
@@ -196,7 +197,7 @@ class Database:
             pattern = "|".join(word_pattern(normalize(word)) for word in catalog["keywords"])
             rules.append({"search_text": {"$regex": pattern}})
         picked = {"catalogs": catalog["_id"]}
-        return {"$or": [picked, {"$and": rules}]} if rules else picked
+        return {"$and": [kept, {"$or": [picked, {"$and": rules}]} if rules else picked]}
 
     async def find_library(self, query, sort="newest", skip=0, limit=30):
         cursor = self.file.find(query).sort(SORTS.get(sort, SORTS["newest"])).collation(NAME_COLLATION)
@@ -326,7 +327,26 @@ class Database:
 
     async def delete_catalog(self, _id):
         await self.catalogs.delete_one({"_id": _id})
-        await self.file.update_many({"catalogs": _id}, {"$pull": {"catalogs": _id}})
+        await self.file.update_many(
+            {"$or": [{"catalogs": _id}, {"catalogs_excluded": _id}]},
+            {"$pull": {"catalogs": _id, "catalogs_excluded": _id}},
+        )
+
+    async def set_catalog_member(self, ids, catalog_id, member):
+        if member:
+            update = {"$addToSet": {"catalogs": catalog_id}, "$pull": {"catalogs_excluded": catalog_id}}
+        else:
+            update = {"$addToSet": {"catalogs_excluded": catalog_id}, "$pull": {"catalogs": catalog_id}}
+        await self.update_library_many(ids, update)
+
+    async def in_catalog(self, _id, catalog):
+        return bool(await self.file.find_one({"$and": [{"_id": ObjectId(_id)}, self.catalog_query(catalog)]}, {"_id": 1}))
+
+    async def count_excluded(self, catalog_id):
+        return await self.file.count_documents({"catalogs_excluded": catalog_id})
+
+    async def restore_excluded(self, catalog_id):
+        await self.file.update_many({"catalogs_excluded": catalog_id}, {"$pull": {"catalogs_excluded": catalog_id}})
 
     async def addon_revision(self):
         settings = await self.settings.find_one({"_id": "addon"})

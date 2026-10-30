@@ -17,6 +17,7 @@
       display: flex; align-items: center; min-height: 2.75rem; padding: .5rem .8rem; border: 0; border-radius: 10px; background: none;
       color: var(--muted); font: 600 .95rem/1 var(--ui); text-align: left; cursor: pointer; transition: background-color .15s, color .15s;
     }
+    .tab svg { flex: none; width: 1.2rem; height: 1.2rem; margin-right: .65rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .tab:hover { background: rgba(255, 236, 220, .05); color: var(--screen); }
     .tab[aria-current="page"] { background: var(--panel); color: var(--amber); box-shadow: inset 0 0 0 1px var(--line); }
     #logout { margin-top: auto; }
@@ -47,6 +48,36 @@
     .switch { display: inline-flex; gap: .5rem; align-items: center; min-height: 2.25rem; cursor: pointer; }
     .switch input, .check input { width: 1.15rem; height: 1.15rem; accent-color: var(--amber); }
 
+    select {
+      appearance: none; -webkit-appearance: none; padding-right: 2.1rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 12 12'%3E%3Cpath d='M2.5 4.5 6 8l3.5-3.5' fill='none' stroke='%23b8a6a3' stroke-width='1.6' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: right .7rem center; background-size: .8rem;
+    }
+    option { background: var(--panel); color: var(--screen); }
+    input[type="search"] {
+      padding-left: 2.5rem;
+      background-image: url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='9' cy='9' r='5.5' fill='none' stroke='%23b8a6a3' stroke-width='1.7'/%3E%3Cpath d='m13.5 13.5 3.5 3.5' stroke='%23b8a6a3' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E");
+      background-repeat: no-repeat; background-position: .8rem center; background-size: 1.1rem;
+    }
+    .views { display: flex; gap: .25rem; width: fit-content; max-width: 100%; margin-bottom: 1rem; padding: .25rem; overflow-x: auto; border-radius: 12px; background: var(--curtain-deep); box-shadow: inset 0 0 0 1px var(--line); }
+    .view-tab {
+      display: inline-flex; flex: none; gap: .45rem; align-items: baseline; min-height: 2.25rem; padding: .45rem .85rem; border: 0; border-radius: 9px;
+      background: none; color: var(--muted); font: 600 .88rem/1.2 var(--ui); cursor: pointer; transition: background-color .15s, color .15s;
+    }
+    .view-tab b { color: var(--screen); font-weight: 700; font-variant-numeric: tabular-nums; }
+    .view-tab:hover { color: var(--screen); }
+    .view-tab[aria-pressed="true"] { background: var(--panel-up); color: var(--screen); box-shadow: 0 1px 0 rgba(255, 255, 255, .06) inset, 0 4px 12px -6px rgba(0, 0, 0, .8); }
+    .view-tab[aria-pressed="true"] b { color: var(--amber); }
+    .filters { display: flex; flex-wrap: wrap; gap: .35rem; align-items: center; margin-top: .75rem; }
+    .filter {
+      display: inline-flex; align-items: center; gap: .1rem; min-height: 2rem; padding: 0 .2rem 0 .75rem; border-radius: 999px;
+      background: rgba(245, 189, 85, .13); color: var(--amber); font-size: .85rem; font-weight: 700;
+    }
+    .filter button { width: 1.7rem; height: 1.7rem; border: 0; border-radius: 50%; background: none; color: inherit; font-size: 1rem; cursor: pointer; }
+    .filter button:hover { background: rgba(245, 189, 85, .2); }
+    .text-button { min-height: 2rem; padding: 0 .4rem; border: 0; background: none; color: var(--muted); font: 600 .85rem/1 var(--ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .text-button:hover { color: var(--screen); }
+
     #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 16.5rem), 1fr)); gap: 1.9rem 1.15rem; margin-top: 1.5rem; }
     .card { position: relative; min-width: 0; }
     .shot {
@@ -54,15 +85,29 @@
       border: 0; border-radius: 12px; background: var(--panel); cursor: pointer;
       box-shadow: 0 0 0 1px var(--line); transition: box-shadow .2s, transform .25s var(--ease);
     }
-    .shot img { display: block; width: 100%; height: 100%; object-fit: cover; transition: transform .45s var(--ease); }
+    .shot img { display: block; width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: transform .45s var(--ease), opacity .3s; }
+    .shot img.ready { opacity: 1; }
+    .shot::after {
+      content: ""; position: absolute; inset: 0; opacity: 0; transition: opacity .2s;
+      background: linear-gradient(180deg, transparent 55%, rgba(14, 7, 11, .55));
+    }
+    .shot:hover::after { opacity: 1; }
+    .ghost { position: relative; overflow: hidden; border-radius: 12px; aspect-ratio: 16 / 9; background: var(--panel); }
+    .ghost::after {
+      content: ""; position: absolute; inset: 0; transform: translateX(-100%);
+      background: linear-gradient(90deg, transparent, rgba(255, 236, 220, .05), transparent); animation: shimmer 1.3s infinite;
+    }
+    @keyframes shimmer { to { transform: translateX(100%); } }
     .shot:hover { box-shadow: 0 0 0 1px var(--line-up), 0 18px 40px -18px rgba(0, 0, 0, .9); transform: translateY(-2px); }
     .shot:hover img { transform: scale(1.035); }
+    .card.dim img.ready { opacity: .35; }
+    .take-out { display: block; margin-top: .25rem; padding: 0; border: 0; background: none; color: var(--amber); font: 700 .82rem/1.5 var(--ui); cursor: pointer; }
+    .take-out:hover { text-decoration: underline; text-underline-offset: 3px; }
     .length {
       position: absolute; right: .45rem; bottom: .45rem; padding: .16rem .45rem; border-radius: 6px;
       background: rgba(14, 7, 11, .76); color: var(--screen); font: 700 .74rem/1.3 var(--ui); font-variant-numeric: tabular-nums;
     }
     .card.picked .shot { box-shadow: 0 0 0 2px var(--amber); }
-    .card.dim img { opacity: .35; }
     .pick {
       position: absolute; top: .4rem; left: .4rem; z-index: 1; display: grid; place-items: center;
       width: 2.4rem; height: 2.4rem; border-radius: 9px; background: rgba(14, 7, 11, .62); cursor: pointer; transition: opacity .15s;
@@ -105,6 +150,18 @@
     .check { display: inline-flex; gap: .45rem; align-items: center; min-height: 2.25rem; margin-right: .85rem; color: var(--screen); font-size: .92rem; font-weight: 500; cursor: pointer; }
     code { display: block; padding: .6rem .75rem; border-radius: 10px; background: var(--curtain-deep); box-shadow: inset 0 0 0 1px var(--line); font-size: .8rem; overflow-wrap: anywhere; }
 
+    .people { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 1rem; margin-top: 1.5rem; }
+    .person { display: grid; gap: .45rem; align-content: start; padding: 1rem; border-radius: 16px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); transition: box-shadow .2s; }
+    .person:hover { box-shadow: inset 0 0 0 1px var(--line-up); }
+    .person .face { width: 5.5rem; height: 5.5rem; font-size: 2.4rem; line-height: 5.5rem; margin-bottom: .25rem; }
+    .person input[type="text"] { min-height: 2.35rem; padding: .3rem .6rem; font-size: .9rem; }
+    .person input.name-input[type="text"] { padding-left: 0; border-color: transparent; background: none; font: 400 1.5rem/1.15 var(--title); }
+    .person input.name-input[type="text"]:hover { border-bottom-color: var(--line-up); }
+    .person input.name-input[type="text"]:focus { padding-left: .6rem; border-color: var(--amber); }
+    .person footer { display: flex; justify-content: space-between; align-items: center; gap: .5rem; margin-top: .25rem; }
+    .section { margin-top: 1.5rem; padding-top: .35rem; border-top: 1px solid var(--line); }
+    .collage { display: grid; flex: none; grid-template-columns: repeat(4, 1fr); gap: 2px; width: min(100%, 15rem); aspect-ratio: 4 / .56; overflow: hidden; border-radius: 8px; background: var(--curtain-deep); }
+    .collage img { width: 100%; height: 100%; object-fit: cover; }
     .list { margin-top: 1.25rem; display: grid; gap: .5rem; }
     .line {
       display: flex; flex-wrap: wrap; gap: .6rem .9rem; align-items: center; padding: .8rem 1rem; border-radius: 14px;
@@ -136,9 +193,11 @@
         background: rgba(14, 7, 11, .86); backdrop-filter: blur(16px); -webkit-backdrop-filter: blur(16px); box-shadow: inset 0 1px 0 var(--line);
       }
       .brand, #logout { display: none; }
-      .tab { flex: 1; justify-content: center; padding: .5rem .1rem; font-size: .8rem; }
+      .tab { flex: 1; flex-direction: column; gap: .2rem; justify-content: center; padding: .4rem .1rem; font-size: .72rem; }
+      .tab svg { margin: 0; }
       #bulk { inset: auto .5rem calc(3.9rem + env(safe-area-inset-bottom)); }
       main { padding-bottom: 12rem; }
+      input[type="search"].grow { flex-basis: 100%; }
       #logout-mobile { display: inline-flex; }
     }
     @media (min-width: 48.01rem) { #logout-mobile { display: none; } }
@@ -147,11 +206,11 @@
 <body>
   <nav aria-label="Dashboard">
     <div class="brand">HR Library</div>
-    <button class="tab" data-view="media">Media</button>
-    <button class="tab" data-view="cast">Cast</button>
-    <button class="tab" data-view="catalogs">Catalogs</button>
-    <button class="tab" data-view="channels">Channels</button>
-    <button class="tab" data-view="addon">Addon</button>
+    <button class="tab" data-view="media"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2.5"/><path d="m10 9.5 5 2.5-5 2.5z"/></svg>Media</button>
+    <button class="tab" data-view="cast"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="12" cy="8" r="3.5"/><path d="M5 20c.8-3.8 3.5-6 7-6s6.200 2.200 7 6"/></svg>Cast</button>
+    <button class="tab" data-view="catalogs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>Catalogs</button>
+    <button class="tab" data-view="channels"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.500 20 4l-3.500 16-5-5.500-3 3-.500-5z"/><path d="m8 12.500 8.500-5.500"/></svg>Channels</button>
+    <button class="tab" data-view="addon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h4v3h3a2 2 0 0 1 2 2v3h-3v4h3v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3z"/></svg>Addon</button>
     <form id="logout" method="post" action="/dashboard/logout"><button class="button small" type="submit">Log out</button></form>
   </nav>
   <main id="view"></main>
@@ -231,10 +290,11 @@
       document.getElementById("bulk")?.remove();
       if (!media.picked.size) return;
       const value = h("input", { type: "text", list: "cast-names", placeholder: "Cast names, separated by commas", "aria-label": "Cast to add" });
-      const catalogSelect = h("select", { "aria-label": "Catalog" }, store.catalogs.filter((catalog) => !catalog.all).map((catalog) => new Option(catalog.name, catalog.id)));
+      const catalogSelect = h("select", { "aria-label": "Catalog" }, store.catalogs.filter((catalog) => !catalog.all && catalog.id !== media.catalog).map((catalog) => new Option(catalog.name, catalog.id)));
       const run = (action, extra, message) => attempt(async () => {
         await api("/media/bulk", "POST", { ids: [...media.picked], action, value: extra });
         media.picked.clear();
+        await refreshShared();
         await reloadMedia();
       }, message);
       document.body.append(h("div", { id: "bulk" },
@@ -243,11 +303,48 @@
         h("button", { class: "button small lit", onclick: () => run("add_cast", value.value, "Cast added") }, "Add cast"),
         catalogSelect.options.length ? catalogSelect : null,
         catalogSelect.options.length ? h("button", { class: "button small", onclick: () => run("add_catalog", catalogSelect.value, "Added to catalog") }, "Add to catalog") : null,
+        media.catalog ? h("button", { class: "button small", onclick: () => run("remove_catalog", media.catalog, "Removed from " + catalogName(media.catalog)) }, "Remove from this catalog") : null,
         h("button", { class: "button small", onclick: () => run("hide", null, "Hidden from the addon") }, "Hide"),
         h("button", { class: "button small", onclick: () => run("show", null, "Shown in the addon") }, "Show"),
         h("button", { class: "button small danger", onclick: () => confirm("Remove " + plural(media.picked.size, "video") + "? Their links stop working. The channel posts stay.") && run("delete", null, "Removed") }, "Remove"),
         h("button", { class: "button small", onclick: () => { media.picked.clear(); drawMediaGrid(); } }, "Clear"),
       ));
+    }
+
+    function catalogName(id) {
+      return store.catalogs.find((catalog) => catalog.id === id)?.name || "catalog";
+    }
+
+    function setMedia(fields) {
+      Object.assign(media, fields);
+      media.picked.clear();
+      showMedia();
+    }
+
+    function drawViews() {
+      const tabs = [["", "All", store.overview.videos], ["uncast", "Needs cast", store.overview.uncast], ["hidden", "Hidden", store.overview.hidden]];
+      document.getElementById("views").replaceChildren(...tabs.map(([state, text, count]) => h("button", {
+        class: "view-tab", type: "button", "aria-pressed": String(media.state === state),
+        onclick: () => setMedia({ state }),
+      }, text, h("b", {}, String(count)))));
+    }
+
+    function drawFilters() {
+      const chips = [];
+      const add = (text, field) => chips.push(h("span", { class: "filter" }, text,
+        h("button", { type: "button", "aria-label": "Clear " + text, onclick: () => setMedia({ [field]: "" }) }, "×")));
+      if (media.label) add(media.label, "label");
+      if (media.catalog) add(catalogName(media.catalog), "catalog");
+      if (media.channel) add(store.channels.find((channel) => String(channel.id) === String(media.channel))?.title || "Channel", "channel");
+      const box = document.getElementById("filters");
+      box.replaceChildren(...chips,
+        h("button", {
+          class: "text-button", type: "button",
+          onclick: () => {
+            for (const item of media.items) media.picked.add(item.id);
+            drawMediaGrid();
+          },
+        }, "Select this page"));
     }
 
     function card(item) {
@@ -262,11 +359,19 @@
           },
         })),
         h("button", { class: "shot", type: "button", "aria-label": "Edit " + item.title, onclick: () => openEditor(item) },
-          h("img", { src: item.poster, alt: "", loading: "lazy" }),
+          h("img", { onload: (event) => event.target.classList.add("ready"), src: item.poster, alt: "", loading: "lazy" }),
           item.duration ? h("span", { class: "length" }, item.duration + " min") : null),
         h("h2", {}, item.title),
         h("p", { class: "sub" }, item.cast.length ? item.cast.join(", ") : "No cast yet"),
         h("p", { class: "sub" }, item.size + (item.hidden ? ", hidden" : "")),
+        media.catalog ? h("button", {
+          class: "take-out", type: "button", "aria-label": "Remove " + item.title + " from " + catalogName(media.catalog),
+          onclick: () => attempt(async () => {
+            await api("/media/" + item.id + "/catalogs", "POST", { catalog: media.catalog, member: false });
+            await refreshShared();
+            await reloadMedia();
+          }, "Removed from " + catalogName(media.catalog)),
+        }, "Remove from catalog") : null,
       );
     }
 
@@ -290,6 +395,11 @@
       return api("/media?" + params);
     }
 
+    async function refreshShared() {
+      await loadShared();
+      if (document.getElementById("views")) { drawViews(); drawFilters(); }
+    }
+
     async function reloadMedia() {
       media.skip = 0;
       const data = await fetchMedia();
@@ -302,7 +412,7 @@
     function picker(label, key, options) {
       return h("select", {
         "aria-label": label,
-        onchange: (event) => { media[key] = event.target.value; attempt(reloadMedia); },
+        onchange: (event) => setMedia({ [key]: event.target.value }),
       }, new Option(label, ""), options.map(([text, value]) => {
         const option = new Option(text, value);
         option.selected = String(media[key]) === String(value);
@@ -312,7 +422,8 @@
 
     async function showMedia() {
       view.replaceChildren(
-        h("div", { class: "head" }, h("h1", {}, "Media"), h("p", { class: "note", id: "media-count" })),
+        h("div", { class: "head" }, h("h1", {}, "Media"), h("p", { class: "note" }, store.overview.size + " in your library")),
+        h("div", { class: "views", id: "views" }),
         h("div", { class: "row" },
           h("input", {
             class: "grow", type: "search", placeholder: "Search titles, captions and file names", "aria-label": "Search", value: media.q,
@@ -324,7 +435,6 @@
           picker("All cast", "label", store.cast.map((person) => [person.name, person.name])),
           picker("All catalogs", "catalog", store.catalogs.map((catalog) => [catalog.name, catalog.id])),
           picker("All channels", "channel", store.channels.map((channel) => [channel.title, channel.id])),
-          picker("Any state", "state", [["No cast yet", "uncast"], ["Hidden", "hidden"]]),
           h("select", { "aria-label": "Sort", onchange: (event) => { media.sort = event.target.value; attempt(reloadMedia); } },
             [["Newest", "newest"], ["Oldest", "oldest"], ["Title", "title"], ["Largest", "largest"]].map(([text, value]) => {
               const option = new Option(text, value);
@@ -332,7 +442,9 @@
               return option;
             })),
         ),
-        h("div", { id: "grid" }),
+        h("div", { class: "filters", id: "filters" }),
+        h("p", { class: "sub", id: "media-count", style: "margin-top: 1rem" }),
+        h("div", { id: "grid" }, Array.from({ length: 8 }, () => h("div", { class: "ghost" }))),
         h("p", { class: "empty", id: "empty", hidden: true }),
         h("button", {
           class: "button", id: "more", hidden: true,
@@ -345,6 +457,8 @@
         }, "Show more"),
         datalist("cast-names", store.cast.map((person) => person.name)),
       );
+      drawViews();
+      drawFilters();
       await reloadMedia();
     }
 
@@ -383,7 +497,19 @@
             if (names.length) save({ cast: [...item.cast, ...names] }, "Cast saved");
           },
         });
-        const manual = store.catalogs.filter((catalog) => !catalog.all);
+        const catalogBox = h("div", {}, h("p", { class: "sub" }, "Loading catalogs"));
+        attempt(async () => {
+          const { catalogs } = await api("/media/" + item.id + "/catalogs");
+          catalogBox.replaceChildren(...catalogs.map((catalog) => h("label", { class: "check" },
+            h("input", {
+              type: "checkbox", checked: catalog.member,
+              onchange: (event) => attempt(async () => {
+                await api("/media/" + item.id + "/catalogs", "POST", { catalog: catalog.id, member: event.target.checked });
+                await refreshShared();
+                if (media.catalog === catalog.id) await reloadMedia();
+              }, (event.target.checked ? "Added to " : "Removed from ") + catalog.name),
+            }), catalog.name)));
+        });
         const postUrl = item.channel_id ? "https://t.me/c/" + String(item.channel_id).replace(/^-100/, "") + "/" + item.message_id : null;
 
         drawer.replaceChildren(
@@ -408,12 +534,8 @@
             h("button", { type: "button", "aria-label": "Remove " + name, onclick: () => save({ cast: item.cast.filter((other) => other !== name) }, "Cast saved") }, "×")))),
           h("div", { style: "margin-top: .4rem" }, castInput),
           h("label", { class: "field" }, "Tags, separated by commas", h("input", { type: "text", value: item.tags.join(", "), onchange: (event) => save({ tags: event.target.value }, "Tags saved") })),
-          manual.length ? h("span", { class: "field-title" }, "Catalogs") : null,
-          h("div", {}, manual.map((catalog) => h("label", { class: "check" },
-            h("input", {
-              type: "checkbox", checked: item.catalogs.includes(catalog.id),
-              onchange: (event) => save({ catalogs: event.target.checked ? [...item.catalogs, catalog.id] : item.catalogs.filter((id) => id !== catalog.id) }, "Catalogs saved"),
-            }), catalog.name))),
+          h("span", { class: "field-title" }, "Catalogs"),
+          catalogBox,
           h("div", { style: "margin-top: 1rem" }, h("label", { class: "switch" },
             h("input", { type: "checkbox", checked: item.hidden, onchange: (event) => save({ hidden: event.target.checked }, event.target.checked ? "Hidden from the addon" : "Shown in the addon") }),
             "Hide from the addon")),
@@ -474,24 +596,24 @@
           await refresh();
           return result;
         }, (result) => result.connected ? "Saved, connected to " + plural(result.connected, "more video") : "Saved");
-        return h("div", { class: "line" }, photo,
-          h("div", { class: "grow" },
-            h("input", { type: "text", value: entry.name, "aria-label": "Name", onchange: (event) => patch({ name: event.target.value }) }),
-            h("input", {
-              type: "text", value: entry.aliases.join(", "), placeholder: "Other spellings, separated by commas", "aria-label": "Other spellings", style: "margin-top: .3rem",
-              onchange: (event) => patch({ aliases: event.target.value }),
-            })),
-          h("button", {
-            class: "button small",
-            onclick: () => { Object.assign(media, { label: entry.name, q: "", catalog: "", channel: "", state: "" }); go("media"); },
-          }, plural(entry.videos, "video")),
-          h("button", {
-            class: "button small danger",
-            onclick: () => confirm("Delete " + entry.name + "? They come off every video.") && attempt(async () => {
-              await api("/cast/" + entry.id, "DELETE");
-              await refresh();
-            }, "Deleted"),
-          }, "Delete"));
+        return h("article", { class: "person" }, photo,
+          h("input", { class: "name-input", type: "text", value: entry.name, "aria-label": "Name", onchange: (event) => patch({ name: event.target.value }) }),
+          h("input", {
+            type: "text", value: entry.aliases.join(", "), placeholder: "Other spellings", "aria-label": "Other spellings",
+            onchange: (event) => patch({ aliases: event.target.value }),
+          }),
+          h("footer", {},
+            h("button", {
+              class: "text-button",
+              onclick: () => { Object.assign(media, { label: entry.name, q: "", catalog: "", channel: "", state: "" }); go("media"); },
+            }, plural(entry.videos, "video")),
+            h("button", {
+              class: "text-button",
+              onclick: () => confirm("Delete " + entry.name + "? They come off every video.") && attempt(async () => {
+                await api("/cast/" + entry.id, "DELETE");
+                await refresh();
+              }, "Deleted"),
+            }, "Delete")));
       }
 
       function drawCast() {
@@ -505,7 +627,7 @@
               onclick: () => attempt(async () => { const result = await api("/cast/rematch", "POST", {}); await refresh(); return result; },
                 (result) => "Connected " + plural(result.connected, "more video")),
             }, "Match all videos again")),
-          store.cast.length ? h("div", { class: "list" }, store.cast.map(person)) : h("p", { class: "empty" }, "Add the first name above."),
+          store.cast.length ? h("div", { class: "people" }, store.cast.map(person)) : h("p", { class: "empty" }, "Add the first name above."),
         );
       }
       drawCast();
@@ -539,7 +661,7 @@
         return h("div", { class: "panel" },
           h("label", { class: "field" }, "Name", name),
           h("label", { class: "field" }, "Sort videos by", sort),
-          catalog.all ? null : h("p", { class: "note", style: "margin-top: 1rem" }, "A video joins this catalog if you tick it on the video, or if it passes every rule set below. A rule with several values needs any one of them."),
+          catalog.all ? null : h("p", { class: "note", style: "margin-top: 1rem" }, "A video joins this catalog if you add it by hand, or if it passes every rule set below. A rule with several values needs any one of them. Videos you remove stay out until you restore them."),
           catalog.all ? null : [
             h("span", { class: "field-title" }, "Cast"), cast.node.childNodes.length ? cast.node : h("p", { class: "sub" }, "No cast yet."),
             h("span", { class: "field-title" }, "Channels"), channels.node.childNodes.length ? channels.node : h("p", { class: "sub" }, "No channels yet."),
@@ -592,7 +714,17 @@
                 type: "checkbox", checked: catalog.enabled, "aria-label": "Show " + catalog.name + " in the addon",
                 onchange: (event) => attempt(async () => { await api("/catalogs/" + catalog.id, "PATCH", { enabled: event.target.checked }); await refresh(); }, event.target.checked ? "Catalog shown" : "Catalog hidden"),
               })),
-            h("div", { class: "grow" }, h("strong", {}, catalog.name), h("p", { class: "sub" }, plural(catalog.videos, "video"))),
+            h("div", { class: "grow" }, h("strong", {}, catalog.name),
+              h("p", { class: "sub" }, plural(catalog.videos, "video") + (catalog.removed ? ", " + catalog.removed + " removed" : ""))),
+            catalog.previews.length ? h("div", { class: "collage", "aria-hidden": "true" }, catalog.previews.map((src) => h("img", { src, alt: "", loading: "lazy" }))) : null,
+            h("button", {
+              class: "button small",
+              onclick: () => { Object.assign(media, { catalog: catalog.id, label: "", q: "", channel: "", state: "" }); media.picked.clear(); go("media"); },
+            }, "View videos"),
+            catalog.removed ? h("button", {
+              class: "button small",
+              onclick: () => attempt(async () => { await api("/catalogs/" + catalog.id + "/restore", "POST", {}); await refresh(); }, "Removed videos restored"),
+            }, "Restore removed") : null,
             h("button", { class: "button small", "aria-label": "Move up", disabled: index === 0, onclick: () => move(index, -1) }, "Up"),
             h("button", { class: "button small", "aria-label": "Move down", disabled: index === store.catalogs.length - 1, onclick: () => move(index, 1) }, "Down"),
             h("button", {
