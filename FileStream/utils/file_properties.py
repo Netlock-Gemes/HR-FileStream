@@ -8,10 +8,9 @@ from pyrogram.enums import ParseMode, ChatType
 from pyrogram.types import Message
 from pyrogram.file_id import FileId
 from FileStream.bot import FileStream
-from FileStream.utils.database import Database
+from FileStream.server.exceptions import FIleNotFound
+from FileStream.utils.database import db
 from FileStream.config import Telegram, Server
-
-db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 
 
 async def get_file_ids(client: Client | bool, db_id: str, multi_clients, message) -> Optional[FileId]:
@@ -36,14 +35,35 @@ async def get_file_ids(client: Client | bool, db_id: str, multi_clients, message
         await db.update_file_ids(db_id, file_id_info)
         logging.debug("Stored file_id in DB")
 
-    logging.debug("Middle of get_file_ids")
-    file_id = FileId.decode(file_id_info[str(client.id)])
+    logging.debug("Ending of get_file_ids")
+    return decode_file_id(file_id_info[str(client.id)], file_info)
+
+
+def decode_file_id(encoded: str, file_info: dict) -> FileId:
+    file_id = FileId.decode(encoded)
     setattr(file_id, "file_size", file_info['file_size'])
     setattr(file_id, "mime_type", file_info['mime_type'])
     setattr(file_id, "file_name", file_info['file_name'])
     setattr(file_id, "unique_id", file_info['file_unique_id'])
-    logging.debug("Ending of get_file_ids")
     return file_id
+
+
+async def refresh_file_id(client: Client, db_id: str, multi_clients) -> FileId:
+    """Gets a fresh file reference for this client once the stored one has expired."""
+    file_info = await db.get_file(db_id)
+    if file_info.get("channel_id"):
+        msg = await client.get_messages(file_info["channel_id"], file_info["message_id"])
+    else:
+        log_msg = await send_file(FileStream, db_id, file_info['file_id'], None)
+        msg = await client.get_messages(Telegram.FLOG_CHANNEL, log_msg.id)
+
+    media = get_media_from_message(msg)
+    if not media:
+        raise FIleNotFound
+    file_ids = file_info.get("file_ids", {})
+    file_ids[str(client.id)] = media.file_id
+    await db.update_file_ids(db_id, file_ids)
+    return decode_file_id(media.file_id, file_info)
 
 
 def get_media_from_message(message: "Message") -> Any:
@@ -111,7 +131,7 @@ def get_file_info(message):
         "file_unique_id": getattr(media, "file_unique_id", ""),
         "file_name": get_name(message),
         "file_size": getattr(media, "file_size", 0),
-        "mime_type": getattr(media, "mime_type", "None/unknown")
+        "mime_type": getattr(media, "mime_type", None) or "None/unknown"
     }
 
 
@@ -126,6 +146,11 @@ async def update_file_id(msg_id, multi_clients):
 
 
 async def send_file(client: Client, db_id, file_id: str, message):
+    # message is None when a stream needs a new copy, long after the file was sent
+    if message is None:
+        return await client.send_cached_media(chat_id=Telegram.FLOG_CHANNEL, file_id=file_id,
+                                              caption=f'**File ID :** `{db_id}`')
+
     file_caption = getattr(message, 'caption', None) or get_name(message)
     log_msg = await client.send_cached_media(chat_id=Telegram.FLOG_CHANNEL, file_id=file_id,
                                              caption=f'**{file_caption}**')

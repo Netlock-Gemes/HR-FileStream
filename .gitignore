@@ -128,3 +128,6 @@ streambot.log.*
 *.xml
 *.xml
 .idea/workspace.xml
+
+# Bot session and poster cache
+data/

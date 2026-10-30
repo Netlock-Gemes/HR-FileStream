@@ -12,6 +12,10 @@ services:
     ports:
       - "127.0.0.1:8080:8080"
 
+    # Bot session and poster cache survive rebuilds
+    volumes:
+      - ./data:/app/data
+
     logging:
       driver: json-file
       options:

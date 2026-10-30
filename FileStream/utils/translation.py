@@ -20,11 +20,11 @@ I'm a powerful Telegram bot that allows you to stream files directly and generat
     HELP_TEXT = """
 <b>🚀 How to Use:</b>
 
-1️⃣ Add me as an <b>admin</b> in your channel.
-2️⃣ Send me any <b>document, video, or media file.</b>
-3️⃣ I’ll generate a <b>streamable link</b> instantly!
+1️⃣ Send me any <b>document, video, or media file.</b>
+2️⃣ I’ll generate a <b>streamable link</b> instantly!
+3️⃣ Videos posted in a <b>library channel</b> go straight to the dashboard and addon.
 
-🔞 <b>Strictly No Adult Content!</b>
+<b>/library</b> shows your dashboard and addon links.
 
 🔧 Found a bug? <a href='https://telegram.me/H_R_Wells'>Report to Developer</a>.
 """
@@ -32,7 +32,7 @@ I'm a powerful Telegram bot that allows you to stream files directly and generat
     ABOUT_TEXT = """
 <b>🤖 Bot Name:</b> {}
 <b>📌 Version:</b> {}
-<b>📅 Last Updated:</b> 20-February-2025
+<b>📅 Last Updated:</b> 31-October-2026
 <b>👨‍💻 Developer:</b> <a href='https://telegram.me/H_R_Wells'>HR Wells</a>
 """
 

@@ -1,9 +1,30 @@
+import re
 import pymongo
 import time
 import motor.motor_asyncio
 from bson.objectid import ObjectId
+from pymongo.collation import Collation
 from bson.errors import InvalidId
+from FileStream.config import Telegram
 from FileStream.server.exceptions import FIleNotFound
+
+NAME_COLLATION = Collation("en", strength=2)
+SORTS = {
+    "newest": [("time", pymongo.DESCENDING)],
+    "oldest": [("time", pymongo.ASCENDING)],
+    "title": [("title", pymongo.ASCENDING)],
+    "largest": [("file_size", pymongo.DESCENDING)],
+}
+
+
+def normalize(text: str) -> str:
+    """Lowercase words split by single spaces, so "Mia.Rao_2" matches the name "mia rao"."""
+    return re.sub(r"[\W_]+", " ", text or "", flags=re.UNICODE).strip().lower()
+
+
+def word_pattern(term: str) -> str:
+    return f"(^| ){re.escape(term)}( |$)"
+
 
 class Database:
     def __init__(self, uri, database_name):
@@ -12,6 +33,16 @@ class Database:
         self.col = self.db.users
         self.black = self.db.blacklist
         self.file = self.db.file
+        self.people = self.db.cast
+        self.catalogs = self.db.catalogs
+        self.channels = self.db.channels
+        self.settings = self.db.settings
+
+    async def ensure_indexes(self):
+        await self.file.create_index([("user_id", 1), ("file_unique_id", 1)])
+        await self.file.create_index([("library", 1), ("time", -1)])
+        await self.file.create_index([("channel_id", 1), ("message_id", 1)], sparse=True)
+        await self.people.create_index("name", unique=True, collation=NAME_COLLATION)
 
 #---------------------[ NEW USER ]---------------------#
     def new_user(self, id):
@@ -132,3 +163,202 @@ class Database:
             await self.col.update_one({"id": id}, {"$inc": {"Links": -1}})
         elif operation == "+":
             await self.col.update_one({"id": id}, {"$inc": {"Links": 1}})
+
+# ---------------------[ STREMIO LIBRARY ]---------------------#
+    @staticmethod
+    def library_query(*conditions, search=None, label=None, channel=None, hidden=False):
+        """hidden: False leaves hidden videos out, True keeps only them, None keeps both."""
+        parts = [{"library": True}, *conditions]
+        if hidden is not None:
+            parts.append({"hidden": True} if hidden else {"hidden": {"$ne": True}})
+        if search:
+            term = normalize(search)
+            parts.append({"search_text": {"$regex": re.escape(term)}})
+        if label:
+            parts.append({"$or": [{"cast": label}, {"tags": label}]})
+        if channel:
+            parts.append({"channel_id": channel})
+        return {"$and": parts}
+
+    @staticmethod
+    def catalog_query(catalog):
+        """A video is in a catalog if it was picked by hand or passes every rule set."""
+        if catalog.get("all"):
+            return {}
+        rules = []
+        if catalog.get("cast"):
+            rules.append({"cast": {"$in": catalog["cast"]}})
+        if catalog.get("tags"):
+            rules.append({"tags": {"$in": catalog["tags"]}})
+        if catalog.get("channels"):
+            rules.append({"channel_id": {"$in": catalog["channels"]}})
+        if catalog.get("keywords"):
+            pattern = "|".join(word_pattern(normalize(word)) for word in catalog["keywords"])
+            rules.append({"search_text": {"$regex": pattern}})
+        picked = {"catalogs": catalog["_id"]}
+        return {"$or": [picked, {"$and": rules}]} if rules else picked
+
+    async def find_library(self, query, sort="newest", skip=0, limit=30):
+        cursor = self.file.find(query).sort(SORTS.get(sort, SORTS["newest"])).collation(NAME_COLLATION)
+        return await cursor.skip(skip).limit(limit).to_list(length=limit)
+
+    async def count_library(self, query):
+        return await self.file.count_documents(query)
+
+    async def library_totals(self):
+        result = await self.file.aggregate([
+            {"$match": {"library": True}},
+            {"$group": {"_id": None, "videos": {"$sum": 1}, "bytes": {"$sum": "$file_size"}}},
+        ]).to_list(length=1)
+        return result[0] if result else {"videos": 0, "bytes": 0}
+
+    async def library_tags(self):
+        return sorted(await self.file.distinct("tags", {"library": True}), key=str.lower)
+
+    async def add_library_file(self, file_info, on_insert):
+        return await self.file.find_one_and_update(
+            {"user_id": file_info["user_id"], "file_unique_id": file_info["file_unique_id"]},
+            {"$set": file_info, "$setOnInsert": on_insert},
+            upsert=True,
+            return_document=pymongo.ReturnDocument.AFTER,
+        )
+
+    async def get_library_file(self, _id):
+        file_info = await self.get_file(_id)
+        if not file_info.get("library"):
+            raise FIleNotFound
+        return file_info
+
+    async def find_channel_post(self, channel_id, message_id):
+        return await self.file.find_one({"channel_id": channel_id, "message_id": message_id})
+
+    async def update_library_file(self, _id, fields=None, unset=None):
+        update = {}
+        if fields:
+            update["$set"] = fields
+        if unset:
+            update["$unset"] = {key: "" for key in unset}
+        if update:
+            await self.file.update_one({"_id": ObjectId(_id), "library": True}, update)
+
+    async def update_library_many(self, ids, update):
+        await self.file.update_many({"_id": {"$in": [ObjectId(_id) for _id in ids]}, "library": True}, update)
+
+    async def delete_library_messages(self, channel_id, message_ids):
+        await self.file.delete_many({"channel_id": channel_id, "message_id": {"$in": message_ids}})
+
+    async def untagged_search_text(self):
+        return await self.file.find({"library": True, "search_text": {"$exists": False}}).to_list(length=None)
+
+# ---------------------[ CAST ]---------------------#
+    async def list_cast(self):
+        return await self.people.find().collation(NAME_COLLATION).sort("name", 1).to_list(length=None)
+
+    async def cast_by_names(self, names):
+        return await self.people.find({"name": {"$in": names}}).to_list(length=None)
+
+    async def get_person(self, _id):
+        try:
+            person = await self.people.find_one({"_id": ObjectId(_id)})
+        except InvalidId:
+            person = None
+        if not person:
+            raise FIleNotFound
+        return person
+
+    async def find_person(self, name):
+        return await self.people.find_one({"name": name}, collation=NAME_COLLATION)
+
+    async def add_person(self, name, aliases):
+        result = await self.people.insert_one({"name": name, "aliases": aliases, "time": time.time()})
+        return await self.people.find_one({"_id": result.inserted_id})
+
+    async def update_person(self, _id, fields):
+        await self.people.update_one({"_id": ObjectId(_id)}, {"$set": fields})
+
+    async def rename_person(self, old, new):
+        await self.file.update_many({"cast": old}, {"$set": {"cast.$": new}})
+        await self.file.update_many({"cast_removed": old}, {"$set": {"cast_removed.$": new}})
+        await self.catalogs.update_many({"cast": old}, {"$set": {"cast.$": new}})
+
+    async def delete_person(self, person):
+        await self.people.delete_one({"_id": person["_id"]})
+        await self.file.update_many({"cast": person["name"]}, {"$pull": {"cast": person["name"]}})
+        await self.catalogs.update_many({"cast": person["name"]}, {"$pull": {"cast": person["name"]}})
+
+    async def match_person(self, name, terms):
+        """Connects a person to every video naming them, except where they were removed by hand."""
+        result = await self.file.update_many(
+            {
+                "library": True,
+                "search_text": {"$regex": "|".join(word_pattern(term) for term in terms)},
+                "cast": {"$ne": name},
+                "cast_removed": {"$ne": name},
+            },
+            {"$addToSet": {"cast": name}},
+        )
+        return result.modified_count
+
+    async def cast_counts(self):
+        rows = await self.file.aggregate([
+            {"$match": {"library": True}},
+            {"$unwind": "$cast"},
+            {"$group": {"_id": "$cast", "count": {"$sum": 1}}},
+        ]).to_list(length=None)
+        return {row["_id"]: row["count"] for row in rows}
+
+# ---------------------[ CATALOGS ]---------------------#
+    async def list_catalogs(self, enabled_only=False):
+        query = {"enabled": True} if enabled_only else {}
+        return await self.catalogs.find(query).sort("order", 1).to_list(length=None)
+
+    async def get_catalog(self, _id):
+        catalog = await self.catalogs.find_one({"_id": _id})
+        if not catalog:
+            raise FIleNotFound
+        return catalog
+
+    async def add_catalog(self, catalog):
+        await self.catalogs.insert_one(catalog)
+
+    async def update_catalog(self, _id, fields):
+        await self.catalogs.update_one({"_id": _id}, {"$set": fields})
+
+    async def delete_catalog(self, _id):
+        await self.catalogs.delete_one({"_id": _id})
+        await self.file.update_many({"catalogs": _id}, {"$pull": {"catalogs": _id}})
+
+    async def addon_revision(self):
+        settings = await self.settings.find_one({"_id": "addon"})
+        return (settings or {}).get("revision", 0)
+
+    async def bump_addon_revision(self):
+        """Apps re-read a manifest whose version changed."""
+        await self.settings.update_one({"_id": "addon"}, {"$inc": {"revision": 1}}, upsert=True)
+
+# ---------------------[ CHANNELS ]---------------------#
+    async def list_channels(self):
+        return await self.channels.find().sort("time", 1).to_list(length=None)
+
+    async def save_channel(self, channel_id, title):
+        await self.channels.update_one(
+            {"_id": channel_id},
+            {"$set": {"title": title}, "$setOnInsert": {"enabled": True, "time": time.time()}},
+            upsert=True,
+        )
+
+    async def update_channel(self, channel_id, fields):
+        await self.channels.update_one({"_id": channel_id}, {"$set": fields})
+
+    async def delete_channel(self, channel_id):
+        await self.channels.delete_one({"_id": channel_id})
+
+    async def channel_counts(self):
+        rows = await self.file.aggregate([
+            {"$match": {"library": True}},
+            {"$group": {"_id": "$channel_id", "count": {"$sum": 1}}},
+        ]).to_list(length=None)
+        return {row["_id"]: row["count"] for row in rows}
+
+
+db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)

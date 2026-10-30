@@ -7,19 +7,18 @@ import aiofiles
 import datetime
 
 from FileStream.utils.broadcast_helper import send_msg
-from FileStream.utils.database import Database
+from FileStream.utils.database import db
 from FileStream.bot import FileStream
 from FileStream.server.exceptions import FIleNotFound
+from FileStream.utils.custom_dl import revoke_file
 from FileStream.config import Telegram, Server
 from pyrogram import filters, Client
 from pyrogram.types import Message
 from pyrogram.enums.parse_mode import ParseMode
-
-db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 broadcast_ids = {}
 
 
-@FileStream.on_message(filters.command("status") & filters.private & filters.user(Telegram.OWNER_ID))
+@FileStream.on_message(filters.command("status") & filters.private & filters.user(Telegram.AUTH_USERS))
 async def sts(c: Client, m: Message):
     await m.reply_text(text=f"""**Total Users in DB:** `{await db.total_users_count()}`
 **Banned Users in DB:** `{await db.total_banned_users_count()}`
@@ -27,7 +26,7 @@ async def sts(c: Client, m: Message):
                        , parse_mode=ParseMode.MARKDOWN, quote=True)
 
 
-@FileStream.on_message(filters.command("ban") & filters.private & filters.user(Telegram.OWNER_ID))
+@FileStream.on_message(filters.command("ban") & filters.private & filters.user(Telegram.AUTH_USERS))
 async def sts(b, m: Message):
     id = m.text.split("/ban ")[-1]
     if not await db.is_user_banned(int(id)):
@@ -48,7 +47,7 @@ async def sts(b, m: Message):
         await m.reply_text(text=f"`{id}`** is Already Banned** ", parse_mode=ParseMode.MARKDOWN, quote=True)
 
 
-@FileStream.on_message(filters.command("unban") & filters.private & filters.user(Telegram.OWNER_ID))
+@FileStream.on_message(filters.command("unban") & filters.private & filters.user(Telegram.AUTH_USERS))
 async def sts(b, m: Message):
     id = m.text.split("/unban ")[-1]
     if await db.is_user_banned(int(id)):
@@ -68,7 +67,7 @@ async def sts(b, m: Message):
         await m.reply_text(text=f"`{id}`** is not Banned** ", parse_mode=ParseMode.MARKDOWN, quote=True)
 
 
-@FileStream.on_message(filters.command("broadcast") & filters.private & filters.user(Telegram.OWNER_ID) & filters.reply)
+@FileStream.on_message(filters.command("broadcast") & filters.private & filters.user(Telegram.AUTH_USERS) & filters.reply)
 async def broadcast_(c, m):
     all_users = await db.get_all_users()
     broadcast_msg = m.reply_to_message
@@ -138,7 +137,7 @@ async def broadcast_(c, m):
     os.remove('broadcast.txt')
 
 
-@FileStream.on_message(filters.command("del") & filters.private & filters.user(Telegram.OWNER_ID))
+@FileStream.on_message(filters.command("del") & filters.private & filters.user(Telegram.AUTH_USERS))
 async def sts(c: Client, m: Message):
     file_id = m.text.split(" ")[-1]
     try:
@@ -149,7 +148,7 @@ async def sts(c: Client, m: Message):
             quote=True
         )
         return
-    await db.delete_one_file(file_info['_id'])
+    await revoke_file(file_info['_id'])
     await db.count_links(file_info['user_id'], "-")
     await m.reply_text(
         text=f"**Fɪʟᴇ Dᴇʟᴇᴛᴇᴅ Sᴜᴄᴄᴇssғᴜʟʟʏ !** ",

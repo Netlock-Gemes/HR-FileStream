@@ -5,36 +5,35 @@ from FileStream.bot import FileStream
 from FileStream.config import Telegram, Server
 from FileStream.utils.translation import LANG, BUTTON
 from FileStream.utils.bot_utils import gen_link
-from FileStream.utils.database import Database
+from FileStream.utils.custom_dl import revoke_file
+from FileStream.utils.database import db
 from FileStream.utils.human_readable import humanbytes
 from FileStream.server.exceptions import FIleNotFound
-from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery
+from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, CallbackQuery, Message
 from pyrogram.file_id import FileId, FileType, PHOTO_TYPES
 from pyrogram.enums.parse_mode import ParseMode
-db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
+
+async def edit_panel(message: Message, text: str, reply_markup):
+    """Panels are photos or plain text depending on how they were sent."""
+    if message.media:
+        await message.edit_caption(caption=text, reply_markup=reply_markup)
+    else:
+        await message.edit_text(text=text, disable_web_page_preview=True, reply_markup=reply_markup)
+
 
 #---------------------[ START CMD ]---------------------#
 @FileStream.on_callback_query()
 async def cb_data(bot, update: CallbackQuery):
+    if update.from_user.id not in Telegram.AUTH_USERS:
+        await update.answer("You are not authorized to use this bot!", show_alert=True)
+        return
     usr_cmd = update.data.split("_")
     if usr_cmd[0] == "home":
-        await update.message.edit_text(
-            text=LANG.START_TEXT.format(update.from_user.mention, FileStream.username),
-            disable_web_page_preview=True,
-            reply_markup=BUTTON.START_BUTTONS
-        )
+        await edit_panel(update.message, LANG.START_TEXT.format(update.from_user.mention, FileStream.username), BUTTON.START_BUTTONS)
     elif usr_cmd[0] == "help":
-        await update.message.edit_text(
-            text=LANG.HELP_TEXT.format(Telegram.OWNER_ID),
-            disable_web_page_preview=True,
-            reply_markup=BUTTON.HELP_BUTTONS
-        )
+        await edit_panel(update.message, LANG.HELP_TEXT.format(Telegram.OWNER_ID), BUTTON.HELP_BUTTONS)
     elif usr_cmd[0] == "about":
-        await update.message.edit_text(
-            text=LANG.ABOUT_TEXT.format(FileStream.fname, __version__),
-            disable_web_page_preview=True,
-            reply_markup=BUTTON.ABOUT_BUTTONS
-        )
+        await edit_panel(update.message, LANG.ABOUT_TEXT.format(FileStream.fname, __version__), BUTTON.ABOUT_BUTTONS)
 
     #---------------------[ MY FILES CMD ]---------------------#
 
@@ -51,10 +50,11 @@ async def cb_data(bot, update: CallbackQuery):
         await delete_user_file(usr_cmd[1], int(usr_cmd[2]), update)
         return
     elif usr_cmd[0] == "msgdelpvt":
-        await update.message.edit_caption(
-        caption= "**Confirm you want to delete the file?**\n\n",
-        reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("✅ Yes", callback_data=f"msgdelpvtyes_{usr_cmd[1]}"), InlineKeyboardButton("❌ No", callback_data=f"mainstream_{usr_cmd[1]}")]])
-    )
+        await edit_panel(
+            update.message,
+            "**Confirm you want to delete the file?**\n\n",
+            InlineKeyboardMarkup([[InlineKeyboardButton("✅ Yes", callback_data=f"msgdelpvtyes_{usr_cmd[1]}"), InlineKeyboardButton("❌ No", callback_data=f"mainstream_{usr_cmd[1]}")]])
+        )
     elif usr_cmd[0] == "msgdelpvtyes":
         await delete_user_filex(usr_cmd[1], update)
         return
@@ -174,7 +174,7 @@ async def delete_user_file(_id, file_list_no: int, update:CallbackQuery):
         await update.answer("File Already Deleted")
         return
 
-    await db.delete_one_file(myfile_info['_id'])
+    await revoke_file(myfile_info['_id'])
     await db.count_links(update.from_user.id, "-")
     await update.message.edit_caption(
             caption= "**File deleted successfully!**" + update.message.caption.replace("Confirm you want to delete the file?", ""),
@@ -189,10 +189,11 @@ async def delete_user_filex(_id, update:CallbackQuery):
         await update.answer("File Already Deleted")
         return
 
-    await db.delete_one_file(myfile_info['_id'])
+    await revoke_file(myfile_info['_id'])
     await db.count_links(update.from_user.id, "-")
-    await update.message.edit_caption(
-            caption= "**File deleted succesfully!**\n\n",
-            reply_markup=InlineKeyboardMarkup([[InlineKeyboardButton("❌ Close", callback_data=f"close")]])
-        )
+    await edit_panel(
+        update.message,
+        "**File deleted successfully!**\n\n",
+        InlineKeyboardMarkup([[InlineKeyboardButton("❌ Close", callback_data=f"close")]])
+    )
 

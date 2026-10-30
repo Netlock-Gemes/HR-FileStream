@@ -1,160 +1,68 @@
 <!DOCTYPE html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>HRWells | {{file_name}}</title>
-    <link
-      rel="icon"
-      href="https://i.ibb.co/Hh4kF2b/icon.png"
-      type="image/x-icon"
-    />
-    <link
-      rel="shortcut icon"
-      href="https://i.ibb.co/Hh4kF2b/icon.png"
-      type="image/x-icon"
-    />
-    <!-- Tailwind CSS CDN -->
-    <script src="https://cdn.tailwindcss.com"></script>
-  </head>
-  <body class="bg-[#0e0c1d] text-gray-100">
-    <!-- Navbar -->
-    <nav class="flex justify-between items-center bg-[#0e0c1d] px-6 py-4">
-      <div class="text-gray-100 text-2xl font-bold mx-auto">
-        HRWells' Video Stream
-      </div>
-    </nav>
-
-    <!-- Video Player Section -->
-    <div id="main" class="w-full flex flex-col shadow-lg">
-      <div class="bg-black w-full border-y-[0.03rem] border-blue-500">
-        <video
-          id="player"
-          class="w-full max-h-[75vh]"
-          src="{{file_url}}"
-          controls
-        ></video>
-      </div>
-      <div class="p-4">
-        <div class="flex flex-col sm:flex-row sm:items-center sm:space-x-6">
-          <div class="flex space-x-2">
-            <span class="font-semibold shrink-0">File Name:</span>
-            <span id="myDiv" class="text-gray-200">{{file_name}}</span>
-          </div>
-          <div class="flex items-center space-x-2 mt-2 sm:mt-0">
-            <span class="font-semibold">File Size:</span>
-            <span class="text-gray-200">{{file_size}}</span>
-          </div>
-        </div>
-
-        <!-- Buttons -->
-        <div
-          class="mt-4 flex flex-wrap gap-y-3 justify-around md:justify-start md:gap-3"
-        >
-          <button
-            onclick="streamDownload()"
-            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
-          >
-            <img
-              src="https://i.ibb.co/RjzYttX/dl.png"
-              class="h-6 mr-2"
-              alt="Download"
-            />
-            Download Video
-          </button>
-          <button
-            onclick="copyStreamLink()"
-            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
-          >
-            <img
-              src="https://i.ibb.co/CM4Y586/link.png"
-              class="h-6 mr-2"
-              alt="Copy Link"
-            />
-            Copy Link
-          </button>
-          <button
-            onclick="vlc_player()"
-            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
-          >
-            <img
-              src="https://i.ibb.co/px6fQs1/vlc.png"
-              class="h-6 mr-2"
-              alt="VLC Player"
-            />
-            Watch in VLC
-          </button>
-          <button
-            onclick="mx_player()"
-            class="flex md:w-fit w-[45%] items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
-          >
-            <img
-              src="https://i.ibb.co/41WvtQ3/mx.png"
-              class="h-6 mr-2"
-              alt="MX Player"
-            />
-            Watch in MX
-          </button>
-          <button
-            onclick="mx_player_pro()"
-            class="flex w-fit items-center px-4 py-2 bg-gray-700 text-white rounded hover:bg-blue-500 transition"
-          >
-            <img
-              src="https://i.ibb.co/41WvtQ3/mx.png"
-              class="h-6 mr-2"
-              alt="MX Player Pro"
-            />
-            Watch in MX Player Pro
-          </button>
-        </div>
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ file_name }}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23241018%27/%3E%3Cpath d=%27M11 8l14 8-14 8z%27 fill=%27%23f2b84b%27/%3E%3C/svg%3E" />
+  <style>
+    {% include "theme.css" %}
+    .stage { background: #000; }
+    video { display: block; width: 100%; max-height: 78dvh; margin: 0 auto; background: #000; }
+    /* The screen throws light onto the room below it */
+    .room {
+      background: radial-gradient(120% 220px at 50% 0, rgba(242, 184, 75, .17), transparent 72%);
+      padding: clamp(1.5rem, 4vw, 3rem) 16px 3rem;
+    }
+    .details { max-width: 56rem; margin: 0 auto; }
+    .size { margin-top: .5rem; color: var(--muted); }
+    .actions { display: flex; flex-wrap: wrap; gap: .5rem; margin-top: 1.5rem; }
+    #playback-note { margin-top: 1rem; color: var(--amber); }
+    @media (max-width: 30rem) { .actions .button { flex: 1 1 calc(50% - .5rem); } }
+  </style>
+</head>
+<body>
+  <div class="stage">
+    <video id="player" src="{{ file_url }}" controls playsinline preload="metadata"></video>
+  </div>
+  <main class="room">
+    <div class="details">
+      <h1>{{ file_name }}</h1>
+      <p class="size">{{ file_size }}</p>
+      <p id="playback-note" role="status" hidden>This browser can't play this file. Open it in VLC or MX Player.</p>
+      <div class="actions">
+        <a class="button lit" id="vlc" href="vlc://{{ file_url }}">Open in VLC</a>
+        <a class="button" id="mx" href="intent:{{ file_url }}#Intent;package=com.mxtech.videoplayer.ad;type=video/*;end">Open in MX Player</a>
+        <a class="button" id="mx-pro" href="intent:{{ file_url }}#Intent;package=com.mxtech.videoplayer.pro;type=video/*;end">Open in MX Player Pro</a>
+        <a class="button" href="{{ file_url }}" download>Download</a>
+        <button class="button" id="copy" type="button">Copy link</button>
       </div>
     </div>
-
-    <script>
-      function streamDownload() {
-        const videoUrl = "{{file_url}}";
-        const anchor = document.createElement("a");
-        anchor.href = videoUrl;
-        anchor.download = "{{file_name}}";
-        document.body.appendChild(anchor);
-        anchor.click();
-        document.body.removeChild(anchor);
+  </main>
+  <script>
+    const fileUrl = {{ file_url|tojson }};
+    const copyButton = document.getElementById("copy");
+    copyButton.addEventListener("click", async () => {
+      try {
+        await navigator.clipboard.writeText(fileUrl);
+      } catch {
+        const field = document.createElement("input");
+        field.value = fileUrl;
+        document.body.append(field);
+        field.select();
+        document.execCommand("copy");
+        field.remove();
       }
-
-      async function copyStreamLink() {
-        const videoUrl = "{{file_url}}";
-        try {
-          await navigator.clipboard.writeText(videoUrl);
-          alert("Link copied to clipboard!");
-        } catch (err) {
-          console.error("Clipboard write failed, using fallback: ", err);
-
-          const tempInput = document.createElement("input");
-          document.body.appendChild(tempInput);
-          tempInput.value = videoUrl;
-          tempInput.select();
-          document.execCommand("copy");
-          document.body.removeChild(tempInput);
-
-          alert("Link copied!");
-        }
-      }
-
-      function vlc_player() {
-        const videoUrl = "{{file_url}}";
-        window.location.href = `vlc://${videoUrl}`;
-      }
-
-      function mx_player() {
-        const videoUrl = "{{file_url}}";
-        window.location.href = `intent:${videoUrl}#Intent;package=com.mxtech.videoplayer.ad;type=video/mp4;end`;
-      }
-
-      function mx_player_pro() {
-        const videoUrl = "{{file_url}}";
-        window.location.href = `intent:${videoUrl}#Intent;package=com.mxtech.videoplayer.pro;type=video/mp4;end`;
-      }
-
-    </script>
-  </body>
+      copyButton.textContent = "Link copied";
+      setTimeout(() => { copyButton.textContent = "Copy link"; }, 2000);
+    });
+    document.getElementById("player").addEventListener("error", () => {
+      document.getElementById("playback-note").hidden = false;
+    });
+    if (!/Android/i.test(navigator.userAgent)) {
+      document.getElementById("mx").remove();
+      document.getElementById("mx-pro").remove();
+    }
+  </script>
+</body>
 </html>

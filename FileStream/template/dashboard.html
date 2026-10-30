@@ -1,0 +1,696 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <meta name="robots" content="noindex" />
+  <title>HR Library</title>
+  <style>
+    {% include "theme.css" %}
+    body { display: grid; grid-template-columns: 13rem minmax(0, 1fr); min-height: 100dvh; }
+    nav {
+      position: sticky; top: 0; align-self: start; display: flex; flex-direction: column; gap: .15rem;
+      height: 100dvh; padding: 1.25rem .75rem; background: var(--curtain-deep);
+    }
+    .brand { padding: 0 .75rem 1rem; font: 1.35rem/1.2 var(--title); }
+    .tab {
+      min-height: 2.75rem; padding: .5rem .75rem; border: 0; border-radius: 6px; background: none;
+      color: var(--muted); font: 500 .98rem/1 var(--ui); text-align: left; cursor: pointer;
+    }
+    .tab[aria-current="page"] { background: var(--panel); color: var(--amber); }
+    #logout { margin-top: auto; }
+    #logout button { width: 100%; }
+    main { padding: 1.5rem clamp(1rem, 3vw, 2.5rem) 8rem; min-width: 0; }
+    .head { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; align-items: baseline; justify-content: space-between; margin-bottom: 1.25rem; }
+    .note { font-size: .92rem; }
+    .row { display: flex; flex-wrap: wrap; gap: .5rem; align-items: center; }
+    .grow { flex: 1 1 14rem; min-width: 0; }
+    input[type="text"], input[type="search"], select, textarea {
+      width: 100%; min-height: 2.75rem; padding: .5rem .75rem;
+      border: 1px solid var(--line); border-radius: 6px;
+      background: var(--curtain-deep); color: var(--screen); font: 1rem/1.35 var(--ui);
+    }
+    select { width: auto; max-width: 100%; flex: 0 1 auto; }
+    textarea { min-height: 7rem; resize: vertical; }
+    label.field { display: block; margin-top: 1rem; color: var(--muted); font-size: .9rem; }
+    label.field > input, label.field > textarea, label.field > select { margin-top: .3rem; width: 100%; color: var(--screen); }
+    .field-title { display: block; margin-top: 1rem; color: var(--muted); font-size: .9rem; }
+    .button.small { min-height: 2.25rem; padding: .25rem .7rem; font-size: .88rem; }
+    .button.danger { color: var(--danger); }
+    .switch { display: inline-flex; gap: .45rem; align-items: center; min-height: 2.25rem; cursor: pointer; }
+    .switch input, .check input { width: 1.15rem; height: 1.15rem; accent-color: var(--amber); }
+
+    #grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15.5rem), 1fr)); gap: 1.5rem 1rem; margin-top: 1rem; }
+    .card { min-width: 0; }
+    .shot {
+      position: relative; display: block; width: 100%; aspect-ratio: 16 / 9; padding: 0; overflow: hidden;
+      border: 0; border-radius: 4px; background: var(--curtain-deep); cursor: pointer;
+    }
+    .shot img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .card.picked .shot { outline: 3px solid var(--amber); }
+    .card.dim img { opacity: .4; }
+    .card { position: relative; }
+    .pick {
+      position: absolute; top: 0; left: 0; z-index: 1; display: grid; place-items: center;
+      width: 2.75rem; height: 2.75rem; background: rgba(23, 10, 16, .65); cursor: pointer;
+    }
+    .pick input { width: 1.2rem; height: 1.2rem; accent-color: var(--amber); }
+    .card h2 { margin-top: .5rem; font: 400 1.08rem/1.25 var(--title); overflow-wrap: anywhere; }
+    .sub { color: var(--muted); font-size: .86rem; overflow-wrap: anywhere; }
+    #more { display: block; margin: 2rem auto 0; }
+    .empty { margin-top: 2rem; color: var(--muted); }
+
+    #bulk {
+      position: fixed; inset: auto 0 0 13rem; z-index: 5; display: flex; flex-wrap: wrap; gap: .5rem; align-items: center;
+      padding: .75rem 16px calc(.75rem + env(safe-area-inset-bottom));
+      border-top: 1px solid var(--amber); background: var(--curtain-deep);
+    }
+    #bulk input { flex: 1 1 10rem; width: auto; }
+
+    #drawer {
+      position: fixed; inset: 0 0 0 auto; z-index: 10; width: min(100%, 32rem); margin: 0; max-height: none; height: 100dvh;
+      padding: 1rem 1.25rem 3rem; overflow-y: auto; border: 0; border-left: 1px solid var(--line);
+      background: var(--curtain); color: var(--screen);
+    }
+    #drawer::backdrop { background: rgba(23, 10, 16, .7); }
+    .drawer-poster { width: 100%; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 4px; background: var(--curtain-deep); }
+    .chips { display: flex; flex-wrap: wrap; gap: .3rem; margin-top: .4rem; }
+    .chip {
+      display: inline-flex; align-items: center; gap: .2rem; min-height: 2rem; padding: 0 .2rem 0 .6rem;
+      border-radius: 4px; background: var(--panel); color: var(--screen); font-size: .9rem;
+    }
+    .chip button { width: 1.75rem; height: 1.75rem; border: 0; background: none; color: var(--muted); font-size: 1rem; cursor: pointer; }
+    .check { display: inline-flex; gap: .4rem; align-items: center; min-height: 2.25rem; margin-right: .75rem; color: var(--screen); font-size: .95rem; cursor: pointer; }
+    code { display: block; padding: .5rem .6rem; border-radius: 4px; background: var(--curtain-deep); font-size: .82rem; overflow-wrap: anywhere; }
+
+    .list { margin-top: 1rem; border-top: 1px solid var(--line); }
+    .line { display: flex; flex-wrap: wrap; gap: .6rem .9rem; align-items: center; padding: .85rem 0; border-bottom: 1px solid var(--line); }
+    .face {
+      position: relative; flex: none; width: 3.5rem; height: 3.5rem; overflow: hidden; border-radius: 50%;
+      background: var(--panel); color: var(--amber); font: 1.3rem/3.5rem var(--title); text-align: center; cursor: pointer;
+    }
+    .face img { display: block; width: 100%; height: 100%; object-fit: cover; }
+    .face input { position: absolute; inset: 0; opacity: 0; cursor: pointer; }
+    .panel { flex: 1 1 100%; padding: .25rem 0 .5rem; }
+    .progress { color: var(--amber); font-size: .9rem; }
+
+    #status {
+      position: fixed; right: 16px; top: 16px; z-index: 20; max-width: min(24rem, calc(100vw - 32px));
+      padding: .5rem .8rem; border-radius: 4px; background: var(--amber); color: var(--curtain-deep); font-size: .92rem;
+    }
+    #status.bad { background: var(--danger); }
+    #status:empty { display: none; }
+
+    @media (max-width: 48rem) {
+      body { display: block; }
+      nav {
+        position: fixed; inset: auto 0 0; z-index: 6; flex-direction: row; justify-content: space-around; height: auto;
+        padding: .25rem .25rem calc(.25rem + env(safe-area-inset-bottom)); border-top: 1px solid var(--line);
+      }
+      .brand, #logout { display: none; }
+      .tab { flex: 1; padding: .5rem .1rem; font-size: .85rem; text-align: center; }
+      #bulk { inset: auto 0 calc(3.3rem + env(safe-area-inset-bottom)); }
+      main { padding-bottom: 12rem; }
+      #logout-mobile { display: inline-flex; }
+    }
+    @media (min-width: 48.01rem) { #logout-mobile { display: none; } }
+  </style>
+</head>
+<body>
+  <nav aria-label="Dashboard">
+    <div class="brand">HR Library</div>
+    <button class="tab" data-view="media">Media</button>
+    <button class="tab" data-view="cast">Cast</button>
+    <button class="tab" data-view="catalogs">Catalogs</button>
+    <button class="tab" data-view="channels">Channels</button>
+    <button class="tab" data-view="addon">Addon</button>
+    <form id="logout" method="post" action="/dashboard/logout"><button class="button small" type="submit">Log out</button></form>
+  </nav>
+  <main id="view"></main>
+  <dialog id="drawer" aria-label="Edit video"></dialog>
+  <div id="status" role="status"></div>
+
+  <script>
+    const API = "/dashboard/api";
+    const view = document.getElementById("view");
+    const drawer = document.getElementById("drawer");
+    const statusBox = document.getElementById("status");
+    const store = { overview: {}, cast: [], catalogs: [], channels: [] };
+    const media = { q: "", label: "", catalog: "", channel: "", state: "", sort: "newest", skip: 0, items: [], total: 0, picked: new Set() };
+    let statusTimer, searchTimer, importTimer;
+
+    function h(tag, attrs = {}, ...children) {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+        else if (key === "class") node.className = value;
+        else if (typeof value === "boolean") { if (value) node.setAttribute(key, ""); }
+        else if (key === "value") node.value = value;
+        else if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      node.append(...children.flat().filter((child) => child !== null && child !== undefined && child !== false));
+      return node;
+    }
+
+    function say(text, bad = false) {
+      statusBox.textContent = text;
+      statusBox.classList.toggle("bad", bad);
+      clearTimeout(statusTimer);
+      statusTimer = setTimeout(() => { statusBox.textContent = ""; }, bad ? 5000 : 2200);
+    }
+
+    async function api(path, method = "GET", body) {
+      const isFile = body instanceof Blob;
+      const response = await fetch(API + path, {
+        method,
+        headers: { "X-HR-Dashboard": "1", ...(body && !isFile ? { "Content-Type": "application/json" } : {}) },
+        body: isFile ? body : body ? JSON.stringify(body) : undefined,
+      });
+      if (response.status === 401) { location.href = "/dashboard/login"; throw new Error("Log in again."); }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "That didn't work. Try again.");
+      return data;
+    }
+
+    // Runs an action and reports its failure, so no handler can fail silently
+    async function attempt(action, success) {
+      try {
+        const result = await action();
+        if (success) say(typeof success === "function" ? success(result) : success);
+        return result;
+      } catch (error) {
+        say(error.message, true);
+        return undefined;
+      }
+    }
+
+    function splitNames(text) { return text.split(",").map((name) => name.trim()).filter(Boolean); }
+    function plural(count, word) { return count + " " + word + (count === 1 ? "" : "s"); }
+    function datalist(id, values) { return h("datalist", { id }, values.map((value) => new Option(value))); }
+    function copy(text, done) { attempt(() => navigator.clipboard.writeText(text), done); }
+
+    async function loadShared() {
+      const [overview, cast, catalogs, channels] = await Promise.all([api("/overview"), api("/cast"), api("/catalogs"), api("/channels")]);
+      store.overview = overview;
+      store.cast = cast.cast;
+      store.catalogs = catalogs.catalogs;
+      store.channels = channels.channels;
+    }
+
+    /* ---------- Media ---------- */
+
+    function drawBulk() {
+      document.getElementById("bulk")?.remove();
+      if (!media.picked.size) return;
+      const value = h("input", { type: "text", list: "cast-names", placeholder: "Cast names, separated by commas", "aria-label": "Cast to add" });
+      const catalogSelect = h("select", { "aria-label": "Catalog" }, store.catalogs.filter((catalog) => !catalog.all).map((catalog) => new Option(catalog.name, catalog.id)));
+      const run = (action, extra, message) => attempt(async () => {
+        await api("/media/bulk", "POST", { ids: [...media.picked], action, value: extra });
+        media.picked.clear();
+        await reloadMedia();
+      }, message);
+      document.body.append(h("div", { id: "bulk" },
+        h("span", {}, media.picked.size + " selected"),
+        value,
+        h("button", { class: "button small lit", onclick: () => run("add_cast", value.value, "Cast added") }, "Add cast"),
+        catalogSelect.options.length ? catalogSelect : null,
+        catalogSelect.options.length ? h("button", { class: "button small", onclick: () => run("add_catalog", catalogSelect.value, "Added to catalog") }, "Add to catalog") : null,
+        h("button", { class: "button small", onclick: () => run("hide", null, "Hidden from the addon") }, "Hide"),
+        h("button", { class: "button small", onclick: () => run("show", null, "Shown in the addon") }, "Show"),
+        h("button", { class: "button small danger", onclick: () => confirm("Remove " + plural(media.picked.size, "video") + "? Their links stop working. The channel posts stay.") && run("delete", null, "Removed") }, "Remove"),
+        h("button", { class: "button small", onclick: () => { media.picked.clear(); drawMediaGrid(); } }, "Clear"),
+      ));
+    }
+
+    function card(item) {
+      const picked = media.picked.has(item.id);
+      return h("article", { class: "card" + (picked ? " picked" : "") + (item.hidden ? " dim" : "") },
+        h("label", { class: "pick" }, h("input", {
+          type: "checkbox", "aria-label": "Select " + item.title, checked: picked,
+          onchange: (event) => {
+            event.target.checked ? media.picked.add(item.id) : media.picked.delete(item.id);
+            event.target.closest(".card").classList.toggle("picked", event.target.checked);
+            drawBulk();
+          },
+        })),
+        h("button", { class: "shot", type: "button", "aria-label": "Edit " + item.title, onclick: () => openEditor(item) },
+          h("img", { src: item.poster, alt: "", loading: "lazy" })),
+        h("h2", {}, item.title),
+        h("p", { class: "sub" }, item.cast.length ? item.cast.join(", ") : "No cast yet"),
+        h("p", { class: "sub" }, item.size + (item.duration ? ", " + item.duration + " min" : "") + (item.hidden ? ", hidden" : "")),
+      );
+    }
+
+    function drawMediaGrid() {
+      const grid = document.getElementById("grid");
+      if (!grid) return;
+      grid.replaceChildren(...media.items.map(card));
+      document.getElementById("media-count").textContent = plural(media.total, "video");
+      document.getElementById("more").hidden = media.items.length >= media.total;
+      const empty = document.getElementById("empty");
+      empty.hidden = media.items.length > 0;
+      empty.textContent = store.overview.videos ? "No videos match. Clear the search or filters." : "Post a video in a library channel and it appears here.";
+      drawBulk();
+    }
+
+    async function fetchMedia() {
+      const params = new URLSearchParams({ skip: media.skip, sort: media.sort });
+      for (const [key, value] of [["q", media.q], ["label", media.label], ["catalog", media.catalog], ["channel", media.channel], ["state", media.state]]) {
+        if (value) params.set(key, value);
+      }
+      return api("/media?" + params);
+    }
+
+    async function reloadMedia() {
+      media.skip = 0;
+      const data = await fetchMedia();
+      media.items = data.items;
+      media.total = data.total;
+      media.skip = data.items.length;
+      drawMediaGrid();
+    }
+
+    function picker(label, key, options) {
+      return h("select", {
+        "aria-label": label,
+        onchange: (event) => { media[key] = event.target.value; attempt(reloadMedia); },
+      }, new Option(label, ""), options.map(([text, value]) => {
+        const option = new Option(text, value);
+        option.selected = String(media[key]) === String(value);
+        return option;
+      }));
+    }
+
+    async function showMedia() {
+      view.replaceChildren(
+        h("div", { class: "head" }, h("h1", {}, "Media"), h("p", { class: "note", id: "media-count" })),
+        h("div", { class: "row" },
+          h("input", {
+            class: "grow", type: "search", placeholder: "Search titles, captions and file names", "aria-label": "Search", value: media.q,
+            oninput: (event) => {
+              clearTimeout(searchTimer);
+              searchTimer = setTimeout(() => { media.q = event.target.value.trim(); attempt(reloadMedia); }, 250);
+            },
+          }),
+          picker("All cast", "label", store.cast.map((person) => [person.name, person.name])),
+          picker("All catalogs", "catalog", store.catalogs.map((catalog) => [catalog.name, catalog.id])),
+          picker("All channels", "channel", store.channels.map((channel) => [channel.title, channel.id])),
+          picker("Any state", "state", [["No cast yet", "uncast"], ["Hidden", "hidden"]]),
+          h("select", { "aria-label": "Sort", onchange: (event) => { media.sort = event.target.value; attempt(reloadMedia); } },
+            [["Newest", "newest"], ["Oldest", "oldest"], ["Title", "title"], ["Largest", "largest"]].map(([text, value]) => {
+              const option = new Option(text, value);
+              option.selected = media.sort === value;
+              return option;
+            })),
+        ),
+        h("div", { id: "grid" }),
+        h("p", { class: "empty", id: "empty", hidden: true }),
+        h("button", {
+          class: "button", id: "more", hidden: true,
+          onclick: () => attempt(async () => {
+            const data = await fetchMedia();
+            media.items.push(...data.items);
+            media.skip += data.items.length;
+            drawMediaGrid();
+          }),
+        }, "Show more"),
+        datalist("cast-names", store.cast.map((person) => person.name)),
+      );
+      await reloadMedia();
+    }
+
+    function replaceItem(item) {
+      const index = media.items.findIndex((other) => other.id === item.id);
+      if (index >= 0) media.items[index] = item;
+      drawMediaGrid();
+    }
+
+    function openEditor(item) {
+      const save = (fields, message) => attempt(async () => {
+        const saved = await api("/media/" + item.id, "PATCH", fields);
+        Object.assign(item, saved);
+        replaceItem(item);
+        drawEditor();
+        return saved;
+      }, message);
+
+      const uploadPoster = (event) => {
+        const file = event.target.files[0];
+        if (!file) return;
+        attempt(async () => {
+          Object.assign(item, await api("/media/" + item.id + "/poster", "PUT", file));
+          replaceItem(item);
+          drawEditor();
+        }, "Thumbnail saved");
+      };
+
+      function drawEditor() {
+        const castInput = h("input", {
+          type: "text", list: "cast-names", placeholder: "Add a name, then press Enter", "aria-label": "Add cast",
+          onkeydown: (event) => {
+            if (event.key !== "Enter") return;
+            event.preventDefault();
+            const names = splitNames(castInput.value);
+            if (names.length) save({ cast: [...item.cast, ...names] }, "Cast saved");
+          },
+        });
+        const manual = store.catalogs.filter((catalog) => !catalog.all);
+        const postUrl = item.channel_id ? "https://t.me/c/" + String(item.channel_id).replace(/^-100/, "") + "/" + item.message_id : null;
+
+        drawer.replaceChildren(
+          h("div", { class: "row", style: "justify-content: space-between; margin-bottom: .75rem" },
+            h("a", { class: "button small", href: item.watch, target: "_blank", rel: "noopener" }, "Watch"),
+            h("button", { class: "button small", onclick: () => drawer.close() }, "Close")),
+          h("img", { class: "drawer-poster", src: item.poster, alt: "" }),
+          h("div", { class: "row", style: "margin-top: .5rem" },
+            h("label", { class: "button small" }, "Upload thumbnail", h("input", { type: "file", accept: "image/*", hidden: true, onchange: uploadPoster })),
+            item.poster_custom ? h("button", {
+              class: "button small",
+              onclick: () => attempt(async () => {
+                Object.assign(item, await api("/media/" + item.id + "/poster", "DELETE"));
+                replaceItem(item);
+                drawEditor();
+              }, "Back to the Telegram thumbnail"),
+            }, "Use Telegram thumbnail") : null),
+          h("label", { class: "field" }, "Title", h("input", { type: "text", value: item.title, onchange: (event) => save({ title: event.target.value }, "Title saved") })),
+          h("label", { class: "field" }, "Description", h("textarea", { onchange: (event) => save({ description: event.target.value }, "Description saved") }, item.description)),
+          h("span", { class: "field-title" }, "Cast"),
+          h("div", { class: "chips" }, item.cast.map((name) => h("span", { class: "chip" }, name,
+            h("button", { type: "button", "aria-label": "Remove " + name, onclick: () => save({ cast: item.cast.filter((other) => other !== name) }, "Cast saved") }, "×")))),
+          h("div", { style: "margin-top: .4rem" }, castInput),
+          h("label", { class: "field" }, "Tags, separated by commas", h("input", { type: "text", value: item.tags.join(", "), onchange: (event) => save({ tags: event.target.value }, "Tags saved") })),
+          manual.length ? h("span", { class: "field-title" }, "Catalogs") : null,
+          h("div", {}, manual.map((catalog) => h("label", { class: "check" },
+            h("input", {
+              type: "checkbox", checked: item.catalogs.includes(catalog.id),
+              onchange: (event) => save({ catalogs: event.target.checked ? [...item.catalogs, catalog.id] : item.catalogs.filter((id) => id !== catalog.id) }, "Catalogs saved"),
+            }), catalog.name))),
+          h("div", { style: "margin-top: 1rem" }, h("label", { class: "switch" },
+            h("input", { type: "checkbox", checked: item.hidden, onchange: (event) => save({ hidden: event.target.checked }, event.target.checked ? "Hidden from the addon" : "Shown in the addon") }),
+            "Hide from the addon")),
+          h("span", { class: "field-title" }, "Content link"),
+          h("code", {}, item.url),
+          h("div", { class: "row", style: "margin-top: .5rem" },
+            h("button", { class: "button small", onclick: () => copy(item.url, "Link copied") }, "Copy link"),
+            postUrl ? h("a", { class: "button small", href: postUrl, target: "_blank", rel: "noopener" }, "Open Telegram post") : null),
+          h("span", { class: "field-title" }, "File"),
+          h("p", { class: "sub" }, item.file_name + ", " + item.size),
+          item.caption ? h("span", { class: "field-title" }, "Caption") : null,
+          item.caption ? h("p", { class: "sub", style: "white-space: pre-line" }, item.caption) : null,
+          h("button", {
+            class: "button small danger", style: "margin-top: 1.5rem",
+            onclick: () => confirm('Remove "' + item.title + '"? Its links stop working. The channel post stays.') && attempt(async () => {
+              await api("/media/" + item.id, "DELETE");
+              media.items = media.items.filter((other) => other.id !== item.id);
+              media.total -= 1;
+              media.picked.delete(item.id);
+              drawer.close();
+              drawMediaGrid();
+            }, "Removed"),
+          }, "Remove from library"),
+        );
+      }
+
+      drawEditor();
+      if (!drawer.open) drawer.showModal();
+    }
+
+    /* ---------- Cast ---------- */
+
+    async function showCast() {
+      const names = h("input", { class: "grow", type: "text", placeholder: "Names, separated by commas", "aria-label": "Cast names" });
+      const refresh = async () => { store.cast = (await api("/cast")).cast; drawCast(); };
+      const add = (event) => {
+        event.preventDefault();
+        attempt(async () => {
+          const result = await api("/cast", "POST", { names: names.value });
+          names.value = "";
+          await refresh();
+          return result;
+        }, (result) => plural(result.added, "name") + " added, connected to " + plural(result.connected, "video"));
+      };
+
+      function person(entry) {
+        const photo = h("label", { class: "face", title: "Upload a photo" },
+          entry.photo ? h("img", { src: entry.photo, alt: "" }) : entry.name[0].toUpperCase(),
+          h("input", {
+            type: "file", accept: "image/*", "aria-label": "Upload a photo of " + entry.name,
+            onchange: (event) => event.target.files[0] && attempt(async () => {
+              await api("/cast/" + entry.id + "/photo", "PUT", event.target.files[0]);
+              await refresh();
+            }, "Photo saved"),
+          }));
+        const patch = (fields) => attempt(async () => {
+          const result = await api("/cast/" + entry.id, "PATCH", fields);
+          await refresh();
+          return result;
+        }, (result) => result.connected ? "Saved, connected to " + plural(result.connected, "more video") : "Saved");
+        return h("div", { class: "line" }, photo,
+          h("div", { class: "grow" },
+            h("input", { type: "text", value: entry.name, "aria-label": "Name", onchange: (event) => patch({ name: event.target.value }) }),
+            h("input", {
+              type: "text", value: entry.aliases.join(", "), placeholder: "Other spellings, separated by commas", "aria-label": "Other spellings", style: "margin-top: .3rem",
+              onchange: (event) => patch({ aliases: event.target.value }),
+            })),
+          h("button", {
+            class: "button small",
+            onclick: () => { Object.assign(media, { label: entry.name, q: "", catalog: "", channel: "", state: "" }); go("media"); },
+          }, plural(entry.videos, "video")),
+          h("button", {
+            class: "button small danger",
+            onclick: () => confirm("Delete " + entry.name + "? They come off every video.") && attempt(async () => {
+              await api("/cast/" + entry.id, "DELETE");
+              await refresh();
+            }, "Deleted"),
+          }, "Delete"));
+      }
+
+      function drawCast() {
+        view.replaceChildren(
+          h("div", { class: "head" }, h("h1", {}, "Cast"), h("p", { class: "note" }, plural(store.cast.length, "name"))),
+          h("p", { class: "note" }, "A name connects to every video whose caption, title or file name contains it, now and for new posts. A name you remove from a video stays off it."),
+          h("form", { class: "row", style: "margin-top: 1rem", onsubmit: add },
+            names, h("button", { class: "button lit", type: "submit" }, "Add cast"),
+            h("button", {
+              class: "button", type: "button",
+              onclick: () => attempt(async () => { const result = await api("/cast/rematch", "POST", {}); await refresh(); return result; },
+                (result) => "Connected " + plural(result.connected, "more video")),
+            }, "Match all videos again")),
+          store.cast.length ? h("div", { class: "list" }, store.cast.map(person)) : h("p", { class: "empty" }, "Add the first name above."),
+        );
+      }
+      drawCast();
+    }
+
+    /* ---------- Catalogs ---------- */
+
+    function checks(values, chosen, labelOf = (value) => value) {
+      const boxes = values.map(([value, text]) => ({ value, box: h("input", { type: "checkbox", checked: chosen.includes(value) }), text }));
+      return {
+        node: h("div", {}, boxes.map(({ box, text }) => h("label", { class: "check" }, box, labelOf(text)))),
+        read: () => boxes.filter(({ box }) => box.checked).map(({ value }) => value),
+      };
+    }
+
+    async function showCatalogs() {
+      const open = new Set();
+      const refresh = async () => { store.catalogs = (await api("/catalogs")).catalogs; drawCatalogs(); };
+
+      function rulesForm(catalog) {
+        const name = h("input", { type: "text", value: catalog.name });
+        const sort = h("select", {}, [["Newest", "newest"], ["Oldest", "oldest"], ["Title", "title"], ["Largest", "largest"]].map(([text, value]) => {
+          const option = new Option(text, value);
+          option.selected = catalog.sort === value;
+          return option;
+        }));
+        const cast = checks(store.cast.map((person) => [person.name, person.name]), catalog.cast);
+        const channels = checks(store.channels.map((channel) => [channel.id, channel.title]), catalog.channels);
+        const tags = h("input", { type: "text", value: catalog.tags.join(", ") });
+        const keywords = h("input", { type: "text", value: catalog.keywords.join(", ") });
+        return h("div", { class: "panel" },
+          h("label", { class: "field" }, "Name", name),
+          h("label", { class: "field" }, "Sort videos by", sort),
+          catalog.all ? null : h("p", { class: "note", style: "margin-top: 1rem" }, "A video joins this catalog if you tick it on the video, or if it passes every rule set below. A rule with several values needs any one of them."),
+          catalog.all ? null : [
+            h("span", { class: "field-title" }, "Cast"), cast.node.childNodes.length ? cast.node : h("p", { class: "sub" }, "No cast yet."),
+            h("span", { class: "field-title" }, "Channels"), channels.node.childNodes.length ? channels.node : h("p", { class: "sub" }, "No channels yet."),
+            h("label", { class: "field" }, "Tags, separated by commas", tags),
+            h("label", { class: "field" }, "Words in the caption or title, separated by commas", keywords),
+          ],
+          h("div", { class: "row", style: "margin-top: 1rem" },
+            h("button", {
+              class: "button small lit",
+              onclick: () => attempt(async () => {
+                const fields = { name: name.value, sort: sort.value };
+                if (!catalog.all) Object.assign(fields, { cast: cast.read(), channels: channels.read(), tags: tags.value, keywords: keywords.value });
+                await api("/catalogs/" + catalog.id, "PATCH", fields);
+                await refresh();
+              }, "Catalog saved"),
+            }, "Save catalog"),
+            catalog.all ? null : h("button", {
+              class: "button small danger",
+              onclick: () => confirm('Delete "' + catalog.name + '"? The videos stay in the library.') && attempt(async () => {
+                await api("/catalogs/" + catalog.id, "DELETE");
+                await refresh();
+              }, "Catalog deleted"),
+            }, "Delete catalog")));
+      }
+
+      function move(index, step) {
+        const ids = store.catalogs.map((catalog) => catalog.id);
+        [ids[index], ids[index + step]] = [ids[index + step], ids[index]];
+        attempt(async () => { await api("/catalogs/reorder", "POST", { ids }); await refresh(); }, "Order saved");
+      }
+
+      function drawCatalogs() {
+        const name = h("input", { class: "grow", type: "text", placeholder: "New catalog name", "aria-label": "New catalog name" });
+        view.replaceChildren(
+          h("div", { class: "head" }, h("h1", {}, "Catalogs"), h("p", { class: "note" }, "Each catalog is a row in Nuvio and Stremio, in this order.")),
+          h("form", {
+            class: "row",
+            onsubmit: (event) => {
+              event.preventDefault();
+              attempt(async () => {
+                const catalog = await api("/catalogs", "POST", { name: name.value });
+                open.add(catalog.id);
+                await refresh();
+              }, "Catalog created");
+            },
+          }, name, h("button", { class: "button lit", type: "submit" }, "Create catalog")),
+          h("div", { class: "list" }, store.catalogs.map((catalog, index) => h("div", { class: "line" },
+            h("label", { class: "switch" },
+              h("input", {
+                type: "checkbox", checked: catalog.enabled, "aria-label": "Show " + catalog.name + " in the addon",
+                onchange: (event) => attempt(async () => { await api("/catalogs/" + catalog.id, "PATCH", { enabled: event.target.checked }); await refresh(); }, event.target.checked ? "Catalog shown" : "Catalog hidden"),
+              })),
+            h("div", { class: "grow" }, h("strong", {}, catalog.name), h("p", { class: "sub" }, plural(catalog.videos, "video"))),
+            h("button", { class: "button small", "aria-label": "Move up", disabled: index === 0, onclick: () => move(index, -1) }, "Up"),
+            h("button", { class: "button small", "aria-label": "Move down", disabled: index === store.catalogs.length - 1, onclick: () => move(index, 1) }, "Down"),
+            h("button", {
+              class: "button small", "aria-expanded": String(open.has(catalog.id)),
+              onclick: () => { open.has(catalog.id) ? open.delete(catalog.id) : open.add(catalog.id); drawCatalogs(); },
+            }, open.has(catalog.id) ? "Close" : "Edit"),
+            open.has(catalog.id) ? rulesForm(catalog) : null))),
+        );
+      }
+      drawCatalogs();
+    }
+
+    /* ---------- Channels ---------- */
+
+    async function showChannels() {
+      const input = h("input", { class: "grow", type: "text", inputmode: "numeric", placeholder: "Channel ID, such as -1001234567890", "aria-label": "Channel ID" });
+      const list = h("div", { class: "list" });
+
+      function line(channel) {
+        const state = channel.import;
+        const lastPost = h("input", { type: "text", inputmode: "numeric", placeholder: "Last post ID (optional)", "aria-label": "Last post ID", style: "width: 12rem" });
+        return h("div", { class: "line" },
+          h("label", { class: "switch" }, h("input", {
+            type: "checkbox", checked: channel.enabled, "aria-label": "Add new posts from " + channel.title,
+            onchange: (event) => attempt(async () => {
+              store.channels = (await api("/channels/" + channel.id, "PATCH", { enabled: event.target.checked })).channels;
+              drawList();
+            }, event.target.checked ? "New posts will be added" : "New posts are ignored"),
+          })),
+          h("div", { class: "grow" },
+            h("strong", {}, channel.title), h("p", { class: "sub" }, channel.id + ", " + plural(channel.videos, "video")),
+            state ? h("p", { class: "progress" }, state.error ? "Import stopped: " + state.error
+              : (state.running ? "Importing, at post " : "Import finished at post ") + state.scanned + ", " + plural(state.added, "video") + " found") : null),
+          lastPost,
+          h("button", {
+            class: "button small", disabled: Boolean(state && state.running),
+            onclick: () => attempt(async () => {
+              store.channels = (await api("/channels/" + channel.id + "/import", "POST", { last_post: lastPost.value })).channels;
+              drawList();
+              watchImports();
+            }, "Import started"),
+          }, "Import old posts"),
+          h("button", {
+            class: "button small danger",
+            onclick: () => confirm("Stop using " + channel.title + "? Its videos stay in the library.") && attempt(async () => {
+              store.channels = (await api("/channels/" + channel.id, "DELETE")).channels;
+              drawList();
+            }, "Channel removed"),
+          }, "Remove"));
+      }
+
+      function drawList() {
+        list.replaceChildren(...store.channels.map(line));
+        if (!store.channels.length) list.replaceChildren(h("p", { class: "empty" }, "Add a channel above. The bot must be an admin there."));
+      }
+
+      function watchImports() {
+        clearTimeout(importTimer);
+        if (!store.channels.some((channel) => channel.import?.running)) return;
+        importTimer = setTimeout(async () => {
+          if (!list.isConnected) return;
+          store.channels = (await api("/channels")).channels;
+          drawList();
+          watchImports();
+        }, 2000);
+      }
+
+      view.replaceChildren(
+        h("div", { class: "head" }, h("h1", {}, "Channels"), h("p", { class: "note" }, "The bot works only in these channels.")),
+        h("form", {
+          class: "row",
+          onsubmit: (event) => {
+            event.preventDefault();
+            attempt(async () => {
+              store.channels = (await api("/channels", "POST", { id: input.value })).channels;
+              input.value = "";
+              drawList();
+            }, "Channel added");
+          },
+        }, input, h("button", { class: "button lit", type: "submit" }, "Add channel")),
+        list,
+      );
+      drawList();
+      watchImports();
+    }
+
+    /* ---------- Addon ---------- */
+
+    async function showAddon() {
+      const { addon_url: url, videos, size, uncast, hidden } = store.overview;
+      view.replaceChildren(
+        h("div", { class: "head" }, h("h1", {}, "Addon")),
+        h("p", { class: "note" }, plural(videos, "video") + ", " + size + ". " + uncast + " without cast, " + hidden + " hidden."),
+        url ? h("div", { style: "margin-top: 1.25rem; max-width: 44rem" },
+          h("span", { class: "field-title" }, "Paste this link into Nuvio or Stremio to install the addon. Keep it private."),
+          h("code", { style: "margin-top: .4rem" }, url),
+          h("div", { class: "row", style: "margin-top: .6rem" },
+            h("button", { class: "button lit", onclick: () => copy(url, "Addon link copied") }, "Copy addon link"),
+            h("a", { class: "button", href: url.replace(/^https?:/, "stremio:") }, "Open in Stremio")),
+        ) : h("p", { class: "empty" }, "Set ADDON_TOKEN on the server to turn the addon on."),
+        h("form", { id: "logout-mobile", method: "post", action: "/dashboard/logout", style: "margin-top: 2rem" },
+          h("button", { class: "button small", type: "submit" }, "Log out")),
+      );
+    }
+
+    /* ---------- Navigation ---------- */
+
+    const views = { media: showMedia, cast: showCast, catalogs: showCatalogs, channels: showChannels, addon: showAddon };
+
+    async function go(name) {
+      if (!views[name]) name = "media";
+      history.replaceState(null, "", "#" + name);
+      document.getElementById("bulk")?.remove();
+      for (const tab of document.querySelectorAll(".tab")) {
+        tab.dataset.view === name ? tab.setAttribute("aria-current", "page") : tab.removeAttribute("aria-current");
+      }
+      await attempt(async () => {
+        await loadShared();
+        await views[name]();
+      });
+    }
+
+    for (const tab of document.querySelectorAll(".tab")) {
+      tab.addEventListener("click", () => go(tab.dataset.view));
+    }
+    drawer.addEventListener("click", (event) => { if (event.target === drawer) drawer.close(); });
+    go(location.hash.slice(1));
+  </script>
+</body>
+</html>

@@ -1,0 +1,46 @@
+:root {
+  --curtain: #241018;
+  --curtain-deep: #170a10;
+  --panel: #321822;
+  --line: #5a3642;
+  --screen: #f7efe2;
+  --muted: #c9afab;
+  --amber: #f2b84b;
+  --danger: #ff9d8f;
+  --title: "Iowan Old Style", "Palatino Linotype", Palatino, "Book Antiqua", Georgia, serif;
+  --ui: ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
+  color-scheme: dark;
+}
+* { box-sizing: border-box; margin: 0; }
+[hidden] { display: none !important; }
+html { -webkit-text-size-adjust: 100%; }
+body {
+  min-height: 100dvh;
+  background: var(--curtain);
+  color: var(--screen);
+  font: 400 1rem/1.5 var(--ui);
+}
+h1 {
+  font: 400 clamp(1.75rem, 1.2rem + 3vw, 3.25rem)/1.12 var(--title);
+  letter-spacing: -0.01em;
+  overflow-wrap: anywhere;
+}
+.note { color: var(--muted); }
+.button {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-height: 2.75rem;
+  padding: 0.5rem 1rem;
+  border: 1px solid var(--line);
+  border-radius: 6px;
+  background: var(--panel);
+  color: var(--screen);
+  font: 500 0.95rem/1.2 var(--ui);
+  text-decoration: none;
+  cursor: pointer;
+  touch-action: manipulation;
+}
+.button:hover { border-color: var(--amber); }
+.button.lit { background: var(--amber); border-color: var(--amber); color: var(--curtain-deep); }
+:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }

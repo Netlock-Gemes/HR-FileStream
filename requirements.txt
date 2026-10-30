@@ -1,9 +1,10 @@
-aiohttp
-pyrofork
+aiohttp==3.14.5
+pyrofork==2.3.69
 python-dotenv
 tgcrypto
 motor
 aiofiles
 dnspython
-requests
 jinja2
+uvloop
+pillow

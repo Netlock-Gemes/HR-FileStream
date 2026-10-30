@@ -1,15 +1,14 @@
 
 import asyncio
 from FileStream.bot import FileStream, multi_clients
-from FileStream.utils.bot_utils import is_user_banned, is_user_exist, is_user_joined, gen_link, is_channel_banned, is_channel_exist, is_user_authorized
-from FileStream.utils.database import Database
+from FileStream.utils.bot_utils import is_user_banned, is_user_exist, is_user_joined, gen_link, is_user_authorized
+from FileStream.utils.database import db
 from FileStream.utils.file_properties import get_file_ids, get_file_info
-from FileStream.config import Telegram, Server
+from FileStream.config import Telegram
 from pyrogram import filters, Client
 from pyrogram.errors import FloodWait
-from pyrogram.types import Message, InlineKeyboardMarkup, InlineKeyboardButton
+from pyrogram.types import Message
 from pyrogram.enums.parse_mode import ParseMode
-db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 
 @FileStream.on_message(
     filters.private
@@ -51,52 +50,3 @@ async def private_receive_handler(bot: Client, message: Message):
         await bot.send_message(chat_id=Telegram.ULOG_CHANNEL,
                        text=f"Got Floodwait of {str(e.value)}s from [{message.from_user.first_name}](tg://user?id={message.from_user.id})\n\n**User ID :** `{str(message.from_user.id)}`",
                        disable_web_page_preview=True, parse_mode=ParseMode.MARKDOWN)
-
-
-
-@FileStream.on_message(
-    filters.channel
-    & ~filters.forwarded
-    & ~filters.media_group
-    & (
-            filters.document
-            | filters.video
-            | filters.video_note
-            | filters.audio
-            | filters.voice
-            | filters.photo
-    )
-)
-async def channel_receive_handler(bot: Client, message: Message):
-    if await is_channel_banned(bot, message):
-        return
-    await is_channel_exist(bot, message)
-
-    try:
-        inserted_id = await db.add_file(get_file_info(message))
-        await get_file_ids(False, inserted_id, multi_clients, message)        
-        page_link = f"{Server.URL}watch/{inserted_id}"
-        dl_link = f"{Server.URL}dl/{inserted_id}"
-        mx_link = f"{Server.URL}mx/{inserted_id}"
-        reply_markup, stream_link = await gen_link(_id=inserted_id)
-        await bot.edit_message_reply_markup(
-            chat_id=message.chat.id,
-            message_id=message.id,
-            reply_markup=InlineKeyboardMarkup(
-                [
-                    [InlineKeyboardButton("📥 Download", url=dl_link), InlineKeyboardButton("🖥 Stream", url=page_link)],
-                    [InlineKeyboardButton("🎬 Watch in MX", url=mx_link)]
-                ])
-        )
-
-    except FloodWait as w:
-        print(f"Sleeping for {str(w.x)}s")
-        await asyncio.sleep(w.x)
-        await bot.send_message(chat_id=Telegram.ULOG_CHANNEL,
-                               text = f"Got floodwait of {str(w.x)}s from {message.chat.title}\n\n**Channel ID :** `{str(message.chat.id)}`",
-                               disable_web_page_preview=True)
-    except Exception as e:
-        await bot.send_message(chat_id=Telegram.ULOG_CHANNEL, text=f"**#ErrrorTrackback:** `{e}`",
-                               disable_web_page_preview=True)
-        print(f"Can't Edit Broadcast Message! Error: Give me edit permission in updates and bin Channel\n{e}")
-

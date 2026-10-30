@@ -5,14 +5,12 @@ from FileStream.bot import FileStream
 from FileStream.server.exceptions import FIleNotFound
 from FileStream.utils.bot_utils import gen_linkx, verify_user
 from FileStream.config import Telegram
-from FileStream.utils.database import Database
+from FileStream.utils.database import db
 from FileStream.utils.translation import LANG, BUTTON
 from pyrogram import filters, Client
 from pyrogram.types import InlineKeyboardMarkup, InlineKeyboardButton, Message
 from pyrogram.enums.parse_mode import ParseMode
 import asyncio
-
-db = Database(Telegram.DATABASE_URL, Telegram.SESSION_NAME)
 
 @FileStream.on_message(filters.command('start') & filters.private)
 async def start(bot: Client, message: Message):

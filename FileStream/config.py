@@ -24,7 +24,10 @@ class Telegram:
     ULOG_CHANNEL = int(env.get("ULOG_CHANNEL", None))   # Logs channel for user logs
     MODE = env.get("MODE", "primary")
     SECONDARY = True if MODE.lower() == "secondary" else False
-    AUTH_USERS = list(set(int(x) for x in str(env.get("AUTH_USERS", "")).split()))
+    # The only accounts that can use the bot. Empty falls back to the owner, never to everyone
+    AUTH_USERS = list(set(int(x) for x in str(env.get("AUTH_USERS", "")).replace(",", " ").split())) or [OWNER_ID]
+    # Channels added on first start. After that, manage them in the dashboard
+    LIBRARY_CHANNELS = [int(x) for x in str(env.get("LIBRARY_CHANNELS", "")).replace(",", " ").split()]
 
 class Server:
     PORT = int(env.get("PORT", 8080))
@@ -36,6 +39,10 @@ class Server:
     URL = "http{}://{}{}/".format(
         "s" if HAS_SSL else "", FQDN, "" if NO_PORT else ":" + str(PORT)
     )
-
-
-
+    STREAM_PARALLEL = int(env.get("STREAM_PARALLEL", "4"))  # 1 MB chunks fetched ahead per request
+    STREAM_CACHE_MB = int(env.get("STREAM_CACHE_MB", "64"))
+    DATA_DIR = str(env.get("DATA_DIR", "data"))
+    ADDON_TOKEN = str(env.get("ADDON_TOKEN", ""))  # Secret in the Stremio addon URL
+    DASHBOARD_USER = str(env.get("DASHBOARD_USER", "hrwells"))
+    DASHBOARD_PASSWORD_HASH = str(env.get("DASHBOARD_PASSWORD_HASH", ""))  # salt:hash, see README
+    DASHBOARD_SECRET = str(env.get("DASHBOARD_SECRET", ""))  # Signs login cookies

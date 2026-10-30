@@ -1,4 +1,7 @@
 import sys
+import uvloop
+uvloop.install()
+
 import asyncio
 import logging
 import traceback
@@ -10,6 +13,9 @@ from pyrogram import idle
 from FileStream.bot import FileStream
 from FileStream.server import web_server
 from FileStream.bot.clients import initialize_clients
+from FileStream.utils.custom_dl import prewarm_streamers
+from FileStream.utils.database import db
+from FileStream.utils.library import setup_library
 
 logging.basicConfig(
     level=logging.INFO,
@@ -50,6 +56,9 @@ async def start_services():
     print("--------------------- Initializing Web Server ---------------------")
     await server.setup()
     await web.TCPSite(server, Server.BIND_ADDRESS, Server.PORT).start()
+    await db.ensure_indexes()
+    await setup_library()
+    prewarm_task = asyncio.create_task(prewarm_streamers())
     print("------------------------------ DONE ------------------------------")
     print()
     print("------------------------- Service Started -------------------------")

@@ -1,43 +1,22 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta property="og:image" content="https://www.flaticon.com/premium-icon/icons/svg/2626/2626281.svg" itemprop="thumbnailUrl">
-    <meta http-equiv="X-UA-Compatible" content="IE=edge">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>{{file_name}}</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Raleway">
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Delius">
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>{{ file_name }}</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%276%27 fill=%27%23241018%27/%3E%3Cpath d=%27M11 8l14 8-14 8z%27 fill=%27%23f2b84b%27/%3E%3C/svg%3E" />
+  <style>
+    {% include "theme.css" %}
+    body { display: grid; place-items: center; padding: 16px; }
+    main { width: min(100%, 36rem); }
+    .size { margin: .5rem 0 1.5rem; color: var(--muted); }
+  </style>
 </head>
-
-<body class='cyber'>
-    <header>
-        <div class="toogle"></div>
-        <div id="file-name" class="cyber">
-            {{file_name}}
-        </div>
-    </header>
-
-    <div class="container">
-        <a href="{{file_url}}">
-            <button class="cybr-btn">
-                Download
-                <span aria-hidden>_</span>
-                <span aria-hidden class="cybr-btn__glitch">_404 Error</span>
-                <span aria-hidden class="cybr-btn__tag">_%s</span>
-            </button>
-        </a>
-    </div>
-	<script>
-        const body = document.querySelector('body');
-        const title = document.querySelector('#file-name');
-        const footer = document.querySelector('footer');
-        const toogle = document.querySelector('.toogle');
-        toogle.onclick = () => {
-            body.classList.toggle('dark')
-            footer.classList.toggle('dark')
-            title.classList.toggle('dark')
-        }
-    </script>
+<body>
+  <main>
+    <h1>{{ file_name }}</h1>
+    <p class="size">{{ file_size }}</p>
+    <a class="button lit" href="{{ file_url }}" download>Download</a>
+  </main>
 </body>
 </html>
