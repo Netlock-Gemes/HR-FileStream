@@ -257,6 +257,11 @@ async def set_media_catalog(request: web.Request):
     return web.json_response({"ok": True})
 
 
+@routes.get(API + "/media/{id}/poster")
+async def poster_info(request: web.Request):
+    return web.json_response(to_item(await db.get_library_file(object_id(request.match_info["id"]))))
+
+
 @routes.put(API + "/media/{id}/poster")
 async def upload_poster(request: web.Request):
     _id = object_id(request.match_info["id"])

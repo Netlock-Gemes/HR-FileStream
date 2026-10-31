@@ -5,6 +5,7 @@ import urllib.parse
 from FileStream.config import Server
 from FileStream.utils.database import db
 from FileStream.utils.human_readable import humanbytes
+from FileStream.utils.library import poster_url
 
 templates = jinja2.Environment(
     loader=jinja2.FileSystemLoader("FileStream/template"),
@@ -32,6 +33,7 @@ async def render_page(db_id, template=None):
         file_name=file_data.get('title') or name,
         file_url=urllib.parse.urljoin(Server.URL, f'dl/{file_data["_id"]}'),
         file_size=humanbytes(file_data['file_size']),
-        poster=f"/poster/{file_data['_id']}.jpg" if file_data.get("library") else None,
+        poster=poster_url(file_data, absolute=False) if file_data.get("library") else None,
+        file_id=str(file_data["_id"]) if file_data.get("library") else None,
         cast=file_data.get("cast") or [],
     )

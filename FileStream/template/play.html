@@ -4,25 +4,38 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
   <title>{{ file_name }}</title>
-  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%23160c12%27/%3E%3Cpath d=%27M11 8l14 8-14 8z%27 fill=%27%23f5bd55%27/%3E%3C/svg%3E" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230c0c0d%27/%3E%3Cpath d=%27M11 8l14 8-14 8z%27 fill=%27%23f2efe9%27/%3E%3C/svg%3E" />
   <style>
     {% include "theme.css" %}
-    .theatre { position: relative; padding: clamp(0px, 2.2vw, 2rem) clamp(0px, 3vw, 3rem) 0; overflow: clip; }
-    /* The film's own colours light the room around the screen */
+    /* One room: the film's own colours light the whole page, behind the player and the text alike */
     #ambience {
-      position: absolute; inset: -6% 0 auto; width: 100%; height: 112%;
-      filter: blur(70px) saturate(1.5); opacity: 0; transition: opacity 1.2s; pointer-events: none;
+      position: fixed; inset: -8% -8% auto; width: 116%; height: 92dvh; z-index: 0; pointer-events: none;
+      filter: blur(72px) saturate(1.35); opacity: 0; transition: opacity 1.4s;
+      -webkit-mask-image: linear-gradient(180deg, #000 42%, transparent); mask-image: linear-gradient(180deg, #000 42%, transparent);
     }
-    #ambience.on { opacity: .55; }
+    #ambience.on { opacity: .4; }
+
+    /* Everything hangs off one measure, so the header, player and title share the same edges */
+    .room {
+      --chrome: 10.5rem;
+      position: relative; z-index: 1; display: grid; grid-template-columns: minmax(0, 1fr);
+      width: min(100% - 2 * var(--gutter), 88rem, max((100dvh - var(--chrome)) * var(--ar), 46rem));
+      margin: 0 auto; padding-bottom: 2.5rem;
+    }
+    :root { --gutter: clamp(16px, 3vw, 2.5rem); --ar: 16 / 9; }
+    .masthead { display: flex; align-items: center; justify-content: space-between; gap: 1rem; min-height: 3.75rem; color: var(--muted); }
+    .brand { display: inline-flex; align-items: center; gap: .55rem; color: var(--text); font: 400 1.2rem/1 var(--title); text-decoration: none; }
+    .brand svg { width: 1.1rem; height: 1.1rem; margin-left: -.3rem; fill: var(--accent); }
+    .to-library { display: inline-flex; align-items: center; min-height: 2.75rem; color: var(--muted); font-size: .88rem; font-weight: 600; text-decoration: none; transition: color .15s; }
+    .to-library:hover { color: var(--text); }
     .player {
-      position: relative; max-width: 88rem; margin: 0 auto; overflow: hidden; outline: none;
-      background: #000; border-radius: clamp(0px, 1.4vw, 16px);
-      box-shadow: 0 30px 80px -30px rgba(0, 0, 0, .9), 0 0 0 1px var(--line);
+      position: relative; aspect-ratio: var(--ar); max-height: calc(100dvh - var(--chrome)); overflow: hidden; outline: none;
+      background: #000; border-radius: 12px;
+      box-shadow: 0 24px 60px -28px rgba(0, 0, 0, .85), 0 0 0 1px var(--line);
       user-select: none; -webkit-user-select: none; -webkit-tap-highlight-color: transparent;
     }
-    .player:fullscreen { max-width: none; border-radius: 0; box-shadow: none; display: grid; place-items: center; }
-    video { display: block; width: 100%; max-height: min(78dvh, 56vw * 1.4); margin: 0 auto; background: #000; }
-    .player:fullscreen video { width: 100%; height: 100%; max-height: none; }
+    .player:fullscreen { max-height: none; aspect-ratio: auto; border-radius: 0; box-shadow: none; }
+    video { display: block; width: 100%; height: 100%; object-fit: contain; background: #000; }
     .player:not(.custom) .layer { display: none; }
     .layer { position: absolute; }
 
@@ -36,21 +49,22 @@
       opacity: 0; transform: translateY(-6px); transition: opacity .25s, transform .25s var(--ease);
       white-space: nowrap; overflow: hidden; text-overflow: ellipsis; text-shadow: 0 1px 8px rgba(0, 0, 0, .6);
     }
+    .player:not(:fullscreen) .top { display: none; }
     .big {
       top: 50%; left: 50%; display: grid; place-items: center; width: clamp(4rem, 9vw, 5.5rem); aspect-ratio: 1;
       padding: 0; border: 1px solid rgba(255, 255, 255, .22); border-radius: 50%; color: #fff; cursor: pointer;
-      background: rgba(20, 11, 16, .45); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
+      background: rgba(var(--deep-rgb), .45); backdrop-filter: blur(14px) saturate(1.4); -webkit-backdrop-filter: blur(14px) saturate(1.4);
       transform: translate(-50%, -50%) scale(.9); opacity: 0; pointer-events: none;
       transition: opacity .22s, transform .3s var(--ease), background-color .2s;
     }
     .big svg { width: 42%; height: 42%; margin-left: 5%; }
-    .big:hover { background: rgba(245, 189, 85, .9); color: #241305; }
+    .big:hover { background: var(--accent); color: var(--on-accent); }
     .paused .big { opacity: 1; pointer-events: auto; transform: translate(-50%, -50%) scale(1); }
     .waiting .big { opacity: 0; pointer-events: none; }
 
     .spinner {
       top: 50%; left: 50%; width: 3.25rem; height: 3.25rem; margin: -1.625rem 0 0 -1.625rem; border-radius: 50%;
-      border: 3px solid rgba(255, 255, 255, .16); border-top-color: var(--amber); animation: spin .8s linear infinite;
+      border: 3px solid rgba(255, 255, 255, .16); border-top-color: var(--accent); animation: spin .8s linear infinite;
       opacity: 0; pointer-events: none; transition: opacity .2s;
     }
     .waiting .spinner { opacity: 1; }
@@ -58,7 +72,7 @@
 
     .flash {
       top: 50%; display: grid; place-items: center; min-width: 5.25rem; padding: .55rem .9rem; border-radius: 999px;
-      background: rgba(20, 11, 16, .6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
+      background: rgba(var(--deep-rgb), .6); backdrop-filter: blur(10px); -webkit-backdrop-filter: blur(10px);
       font: 700 .92rem/1 var(--ui); font-variant-numeric: tabular-nums;
       transform: translate(-50%, -50%); opacity: 0; pointer-events: none;
     }
@@ -80,15 +94,15 @@
     .scrub:hover .rail, .scrub.dragging .rail, .scrub:focus-visible .rail { height: 7px; }
     .buffered, .played { position: absolute; inset: 0 auto 0 0; }
     .buffered { background: rgba(255, 255, 255, .3); }
-    .played { width: 0; background: linear-gradient(90deg, var(--amber-deep), var(--amber)); }
+    .played { width: 0; background: var(--accent); }
     .knob {
       position: absolute; top: 50%; left: 0; width: 14px; height: 14px; margin: -7px 0 0 -7px; border-radius: 50%;
-      background: #fff6e4; box-shadow: 0 0 0 4px rgba(245, 189, 85, .3), 0 2px 8px rgba(0, 0, 0, .5);
+      background: var(--text); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .3), 0 2px 8px rgba(0, 0, 0, .5);
       transform: scale(0); transition: transform .15s var(--ease); pointer-events: none;
     }
     .scrub:hover .knob, .scrub.dragging .knob, .scrub:focus-visible .knob { transform: scale(1); }
     .tip {
-      position: absolute; bottom: 1.6rem; left: 0; padding: .28rem .5rem; border-radius: 6px; background: rgba(14, 7, 11, .9);
+      position: absolute; bottom: 1.6rem; left: 0; padding: .28rem .5rem; border-radius: 6px; background: rgba(var(--deep-rgb), .9);
       font: 700 .78rem/1 var(--ui); font-variant-numeric: tabular-nums; transform: translateX(-50%); opacity: 0;
       pointer-events: none; transition: opacity .12s;
     }
@@ -117,46 +131,81 @@
     .volume-level { position: absolute; inset: 0 auto 0 0; border-radius: 4px; background: #fff; }
 
     .menu {
-      right: clamp(.6rem, 1.8vw, 1.1rem); bottom: 4.2rem; display: grid; min-width: 7.5rem; padding: .3rem; border-radius: 12px;
-      background: rgba(20, 11, 16, .86); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      right: clamp(.6rem, 1.8vw, 1.1rem); bottom: 4.2rem; z-index: 3; display: grid; min-width: 7.5rem; padding: .3rem; border-radius: 12px;
+      background: rgba(var(--deep-rgb), .88); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
       box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .8), 0 0 0 1px var(--line);
+      transform-origin: bottom right; animation: rise .16s var(--ease);
     }
-    .menu button {
-      min-height: 2.25rem; padding: 0 .7rem; border: 0; border-radius: 8px; background: none; color: #fff;
-      font: 600 .88rem/1 var(--ui); font-variant-numeric: tabular-nums; text-align: left; cursor: pointer;
+    @keyframes rise { from { opacity: 0; transform: translateY(4px) scale(.98); } }
+    .menu button, .menu a {
+      display: flex; align-items: center; gap: .6rem; min-height: 2.5rem; padding: 0 .75rem; border: 0; border-radius: 8px; background: none; color: #fff;
+      font: 600 .88rem/1 var(--ui); font-variant-numeric: tabular-nums; text-align: left; text-decoration: none; white-space: nowrap; cursor: pointer;
     }
-    .menu button:hover { background: rgba(255, 255, 255, .12); }
-    .menu button[aria-checked="true"] { color: var(--amber); }
+    .menu svg { flex: none; width: 1.1rem; height: 1.1rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; opacity: .75; }
+    .menu button:hover, .menu a:hover, .menu button:focus-visible { background: rgba(255, 255, 255, .12); }
+    .menu button:disabled { opacity: .45; cursor: default; background: none; }
+    .menu button[aria-checked="true"] { color: var(--accent); }
+
+    /* Sits above the bar while it's showing and settles lower once the bar hides */
+    .saved {
+      left: clamp(.6rem, 1.8vw, 1.1rem); bottom: .9rem; z-index: 2; display: flex; align-items: center; gap: .7rem; max-width: calc(100% - 1.2rem);
+      padding: .4rem .5rem .4rem .4rem; border-radius: 11px; color: #fff; font: 600 .86rem/1.2 var(--ui);
+      background: rgba(var(--deep-rgb), .88); backdrop-filter: blur(16px) saturate(1.3); -webkit-backdrop-filter: blur(16px) saturate(1.3);
+      box-shadow: 0 16px 40px -12px rgba(0, 0, 0, .8), 0 0 0 1px var(--line);
+      transition: bottom .25s var(--ease); animation: rise .2s var(--ease);
+    }
+    .controls-on .saved { bottom: 4.6rem; }
+    .saved img { flex: none; width: 4.25rem; aspect-ratio: 16 / 9; object-fit: cover; border-radius: 6px; background: #000; }
+    .saved button { min-height: 2rem; padding: 0 .55rem; border: 0; border-radius: 7px; background: none; color: var(--accent); font: inherit; cursor: pointer; }
+    .saved button:hover { background: rgba(255, 255, 255, .12); }
 
     .fail {
       inset: 0; display: grid; place-content: center; gap: .9rem; justify-items: center; padding: 1.5rem; text-align: center;
-      background: rgba(14, 7, 11, .88);
+      background: rgba(var(--deep-rgb), .88);
     }
     .fail p { max-width: 26rem; }
 
-    .details { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: 1.25rem 2.5rem; align-items: end; max-width: calc(88rem + 6vw); margin: 0 auto; padding: clamp(1.5rem, 3.5vw, 2.75rem) clamp(16px, 3vw, 3rem) 3.5rem; position: relative; }
-    .details h1 { font-size: clamp(1.7rem, 1.3rem + 1.9vw, 2.9rem); line-height: 1.08; }
-    .facts { display: flex; flex-wrap: wrap; gap: .35rem; margin-top: .85rem; }
-    .fact { padding: .25rem .65rem; border-radius: 999px; background: var(--panel); box-shadow: inset 0 0 0 1px var(--line); color: var(--muted); font-size: .85rem; font-weight: 600; }
-    .actions { display: flex; flex-wrap: wrap; gap: .5rem; justify-content: flex-end; }
+    .details { display: grid; grid-template-columns: minmax(0, 1fr) auto; gap: .9rem 2rem; align-items: start; padding-top: 1.1rem; }
+    .details h1 { font-size: clamp(1.5rem, 1.25rem + 1vw, 2.1rem); line-height: 1.14; text-wrap: balance; }
+    .facts { display: flex; flex-wrap: wrap; gap: .1rem .55rem; margin-top: .4rem; color: var(--muted); font-size: .9rem; font-variant-numeric: tabular-nums; }
+    .facts > * + *::before { content: "·"; margin-right: .55rem; opacity: .6; }
+    .actions { display: flex; flex-wrap: wrap; gap: .15rem; justify-content: flex-end; margin-right: -.7rem; padding-top: .1rem; }
+    .quiet {
+      display: inline-flex; align-items: center; gap: .45rem; min-height: 2.75rem; padding: 0 .7rem; border: 0; border-radius: 9px; background: none;
+      color: var(--muted); font: 600 .88rem/1 var(--ui); text-decoration: none; cursor: pointer; touch-action: manipulation; list-style: none;
+      transition: background-color .15s, color .15s;
+    }
+    .quiet::-webkit-details-marker { display: none; }
+    .quiet:hover, details[open] > .quiet { background: rgba(var(--ink-rgb), .07); color: var(--text); }
+    .quiet svg { width: 1.05rem; height: 1.05rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; stroke-linejoin: round; }
+    .open-in { position: relative; }
+    .open-in .menu { position: absolute; top: calc(100% + .3rem); right: 0; bottom: auto; min-width: 11rem; transform-origin: top right; }
     @media (max-width: 52rem) {
+      .room { --chrome: 12.5rem; }
       .details { grid-template-columns: minmax(0, 1fr); }
-      .actions { justify-content: flex-start; }
-      .actions .button { flex: 1 1 calc(50% - .5rem); }
+      .actions { justify-content: flex-start; margin: 0 0 0 -.7rem; }
+      .open-in .menu { right: auto; left: 0; }
     }
     @media (max-width: 34rem) {
-      .theatre { padding: 0; }
-      .player { border-radius: 0; box-shadow: none; }
+      .room { width: 100%; }
+      .masthead, .details { padding-inline: var(--gutter); }
+      .masthead { min-height: 3.25rem; }
+      .player { aspect-ratio: var(--ar); max-height: 70dvh; border-radius: 0; box-shadow: none; }
       .hide-small { display: none; }
+      .cast { flex-basis: 100%; }
+      .cast::before { display: none; }
       .ctl { width: 2.35rem; height: 2.35rem; }
       .time { padding: 0 .25rem; font-size: .8rem; }
-      video { max-height: none; }
     }
   </style>
 </head>
 <body>
-  <div class="theatre">
-    <canvas id="ambience" width="32" height="18" aria-hidden="true"></canvas>
+  <canvas id="ambience" width="32" height="18" aria-hidden="true"></canvas>
+  <div class="room">
+    <header class="masthead">
+      <span class="brand"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.6v14.8c0 .8.9 1.3 1.6.8l11.3-7.4c.6-.4.6-1.3 0-1.7L8.6 3.8C7.9 3.3 7 3.8 7 4.6z"/></svg>HR Filestream</span>
+      <a class="to-library" id="library" href="/dashboard" hidden>Library</a>
+    </header>
     <div class="player paused controls-on" id="stage" tabindex="-1">
       <video id="player" src="{{ file_url }}" controls playsinline preload="metadata"{% if poster %} poster="{{ poster }}"{% endif %}></video>
       <div class="layer shade"></div>
@@ -195,6 +244,9 @@
           <button class="time" id="time" type="button" aria-label="Switch between elapsed and remaining time">0:00 <span>/ 0:00</span></button>
           <div class="push"></div>
           <button class="ctl speed" id="speed" type="button" aria-label="Playback speed" aria-haspopup="menu" aria-expanded="false">1×</button>
+          <button class="ctl" id="more" type="button" aria-label="More options" aria-haspopup="menu" aria-expanded="false">
+            <svg viewBox="0 0 24 24"><circle cx="12" cy="5.5" r="1.8"/><circle cx="12" cy="12" r="1.8"/><circle cx="12" cy="18.5" r="1.8"/></svg>
+          </button>
           <button class="ctl hide-small" id="pip" type="button" aria-label="Picture in picture" hidden>
             <svg viewBox="0 0 24 24"><path d="M4 5h16a2 2 0 0 1 2 2v10a2 2 0 0 1-2 2H4a2 2 0 0 1-2-2V7c0-1.1.9-2 2-2zm0 2v10h16V7H4z"/><rect x="11.5" y="11" width="7" height="4.5" rx="1"/></svg>
           </button>
@@ -205,33 +257,50 @@
         </div>
       </div>
       <div class="layer menu" id="speed-menu" role="menu" aria-label="Playback speed" hidden></div>
+      <div class="layer menu" id="more-menu" role="menu" aria-label="More options" hidden>
+        <button type="button" role="menuitem" id="save-frame" hidden><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="5" width="18" height="14" rx="2"/><circle cx="9" cy="10" r="1.6"/><path d="m21 16-4.5-4.5L7 19"/></svg>Save frame as thumbnail</button>
+        <button type="button" role="menuitem" id="menu-copy"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></svg>Copy link</button>
+        <a role="menuitem" href="{{ file_url }}" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/></svg>Download</a>
+      </div>
+      <div class="layer saved" id="saved" role="status" hidden>
+        <img id="saved-frame" alt="" />
+        <span id="saved-text"></span>
+        <button type="button" id="undo" hidden>Undo</button>
+      </div>
       <div class="layer fail" id="fail" hidden>
         <p>This browser can't play this file. Open it in VLC or MX Player.</p>
         <a class="button lit" href="vlc://{{ file_url }}">Open in VLC</a>
       </div>
     </div>
-  </div>
-  <main class="details">
-    <div>
-      <h1>{{ file_name }}</h1>
-      <div class="facts">
-        <span class="fact">{{ file_size }}</span>
-        {% for name in cast %}<span class="fact">{{ name }}</span>{% endfor %}
+    <main class="details">
+      <div>
+        <h1>{{ file_name }}</h1>
+        <p class="facts">
+          <span>{{ file_size }}</span>
+          <span id="runtime" hidden></span>
+          <span id="quality" hidden></span>
+          {% if cast %}<span class="cast">{{ cast|join(", ") }}</span>{% endif %}
+        </p>
       </div>
-    </div>
-    <div class="actions">
-      <a class="button lit" href="vlc://{{ file_url }}">Open in VLC</a>
-      <a class="button" id="mx" href="intent:{{ file_url }}#Intent;package=com.mxtech.videoplayer.ad;type=video/*;end">Open in MX Player</a>
-      <a class="button" id="mx-pro" href="intent:{{ file_url }}#Intent;package=com.mxtech.videoplayer.pro;type=video/*;end">Open in MX Player Pro</a>
-      <a class="button" href="{{ file_url }}" download>Download</a>
-      <button class="button" id="copy" type="button">Copy link</button>
-    </div>
-  </main>
+      <div class="actions">
+        <details class="open-in" id="open-in">
+          <summary class="quiet"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M14 4h6v6m0-6-9 9M18 14v4a2 2 0 0 1-2 2H6a2 2 0 0 1-2-2V8a2 2 0 0 1 2-2h4"/></svg>Open in</summary>
+          <div class="menu">
+            <a href="vlc://{{ file_url }}">VLC</a>
+            <a id="mx" href="intent:{{ file_url }}#Intent;package=com.mxtech.videoplayer.ad;type=video/*;end">MX Player</a>
+            <a id="mx-pro" href="intent:{{ file_url }}#Intent;package=com.mxtech.videoplayer.pro;type=video/*;end">MX Player Pro</a>
+          </div>
+        </details>
+        <a class="quiet" href="{{ file_url }}" download><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 4v11m-4.5-4.5L12 15l4.5-4.5M5 20h14"/></svg>Download</a>
+        <button class="quiet" id="copy" type="button"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 14a4 4 0 0 0 6 .4l3-3a4 4 0 0 0-5.7-5.7l-1.2 1.2"/><path d="M14 10a4 4 0 0 0-6-.4l-3 3a4 4 0 0 0 5.7 5.7l1.2-1.2"/></svg><span id="copy-label">Copy link</span></button>
+      </div>
+    </main>
+  </div>
   <script>
     const fileUrl = {{ file_url|tojson }};
+    const fileId = {{ file_id|tojson }};
     const $ = (id) => document.getElementById(id);
-    const copyButton = $("copy");
-    copyButton.addEventListener("click", async () => {
+    async function copyLink() {
       try {
         await navigator.clipboard.writeText(fileUrl);
       } catch {
@@ -242,8 +311,11 @@
         document.execCommand("copy");
         field.remove();
       }
-      copyButton.textContent = "Link copied";
-      setTimeout(() => { copyButton.textContent = "Copy link"; }, 2000);
+    }
+    $("copy").addEventListener("click", async () => {
+      await copyLink();
+      $("copy-label").textContent = "Link copied";
+      setTimeout(() => { $("copy-label").textContent = "Copy link"; }, 2000);
     });
     if (!/Android/i.test(navigator.userAgent)) {
       $("mx").remove();
@@ -279,7 +351,7 @@
     function showControls() {
       stage.classList.add("controls-on");
       clearTimeout(hideTimer);
-      if (!video.paused && !dragging && $("speed-menu").hidden) {
+      if (!video.paused && !dragging && !menuOpen()) {
         hideTimer = setTimeout(() => stage.classList.remove("controls-on"), HIDE_AFTER);
       }
     }
@@ -389,9 +461,103 @@
     $("volume").addEventListener("pointermove", (event) => { if ($("volume").classList.contains("dragging")) volumeAt(event); });
     $("volume").addEventListener("pointerup", () => $("volume").classList.remove("dragging"));
 
+    const menus = [[$("speed"), $("speed-menu")], [$("more"), $("more-menu")]];
+    const menuOpen = () => menus.some(([, menu]) => !menu.hidden);
+
     function closeMenu() {
-      $("speed-menu").hidden = true;
-      $("speed").setAttribute("aria-expanded", "false");
+      for (const [button, menu] of menus) {
+        menu.hidden = true;
+        button.setAttribute("aria-expanded", "false");
+      }
+    }
+
+    function toggleMenu(button, menu) {
+      const open = menu.hidden;
+      closeMenu();
+      menu.hidden = !open;
+      button.setAttribute("aria-expanded", String(open));
+      if (open) menu.querySelector("button:not([hidden]):not(:disabled), a")?.focus({ preventScroll: true });
+      showControls();
+    }
+
+    /* ---------- Save this frame as the thumbnail ---------- */
+
+    // The poster cache keeps images at this size, so a larger frame would only waste the upload
+    const FRAME_SIDE = 1280;
+    const FRAME_QUALITY = 0.82;
+    const API_HEADERS = { "X-HR-Dashboard": "1" };
+    let savedTimer, undoSave = null, posterInfo = null;
+
+    function captureFrame() {
+      // Before the frame has loaded the canvas would come out black
+      if (video.readyState < 2) return Promise.reject(new Error("Wait for the picture to load, then try again."));
+      const scale = Math.min(FRAME_SIDE / Math.max(video.videoWidth, video.videoHeight), 1);
+      const canvas = document.createElement("canvas");
+      canvas.width = Math.round(video.videoWidth * scale);
+      canvas.height = Math.round(video.videoHeight * scale);
+      canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+      return new Promise((resolve, reject) => {
+        canvas.toBlob((blob) => (blob ? resolve(blob) : reject(new Error("empty"))), "image/jpeg", FRAME_QUALITY);
+      });
+    }
+
+    function showSaved(text, frame = null, undo = null) {
+      clearTimeout(savedTimer);
+      const box = $("saved");
+      $("saved-text").textContent = text;
+      $("saved-frame").hidden = !frame;
+      if (frame) {
+        URL.revokeObjectURL($("saved-frame").src);
+        $("saved-frame").src = URL.createObjectURL(frame);
+      }
+      undoSave = undo;
+      $("undo").hidden = !undo;
+      box.hidden = false;
+      savedTimer = setTimeout(() => { box.hidden = true; undoSave = null; }, undo ? 7000 : 3500);
+    }
+
+    async function putPoster(method, body) {
+      const response = await fetch(`/dashboard/api/media/${fileId}/poster`, { method, body, headers: API_HEADERS });
+      if (!response.ok) throw new Error((await response.json().catch(() => ({}))).error || "Couldn't save it.");
+      return response.json();
+    }
+
+    async function saveFrame() {
+      closeMenu();
+      let frame;
+      try {
+        frame = await captureFrame();
+      } catch (error) {
+        showSaved(error.name === "SecurityError" ? "This browser blocked saving the frame." : error.message);
+        return;
+      }
+      const before = posterInfo;
+      // A custom poster can only come back from a copy; a Telegram one is simply fetched again
+      const previous = before.poster_custom ? await fetch(before.poster).then((r) => r.blob()).catch(() => null) : null;
+      showSaved("Saving…", frame);
+      try {
+        const item = await putPoster("PUT", frame);
+        posterInfo = item;
+        const canUndo = !before.poster_custom || previous;
+        showSaved("Saved as thumbnail", frame, canUndo ? async () => {
+          $("saved").hidden = true;
+          posterInfo = await putPoster(previous ? "PUT" : "DELETE", previous || undefined);
+          showSaved("Thumbnail restored");
+        } : null);
+      } catch (error) {
+        showSaved(error.message);
+      }
+    }
+
+    // Only a logged-in owner gets this back. The session cookie is scoped to /dashboard, so this page
+    // can't tell from the server side, and a visitor sees no sign that the option exists.
+    async function checkOwner() {
+      if (fileId === null) return;
+      const response = await fetch(`/dashboard/api/media/${fileId}/poster`).catch(() => null);
+      if (!response || !response.ok) return;
+      posterInfo = await response.json();
+      $("save-frame").hidden = false;
+      $("library").hidden = false;
     }
 
     function drawSpeeds() {
@@ -412,6 +578,7 @@
         remember("hrp:speed", rate);
         closeMenu();
         showControls();
+        $("speed").focus({ preventScroll: true });
       });
       $("speed-menu").append(button);
     }
@@ -459,7 +626,10 @@
     function paintAmbience() {
       const canvas = $("ambience");
       try {
-        canvas.getContext("2d").drawImage(video, 0, 0, canvas.width, canvas.height);
+        // Low alpha blends each sample into the last, so the light drifts instead of jumping at cuts
+        const context = canvas.getContext("2d");
+        context.globalAlpha = canvas.classList.contains("on") ? 0.2 : 1;
+        context.drawImage(video, 0, 0, canvas.width, canvas.height);
         canvas.classList.add("on");
       } catch {
         canvas.classList.remove("on");
@@ -490,14 +660,19 @@
       $("pip").addEventListener("click", () => {
         (document.pictureInPictureElement ? document.exitPictureInPicture() : video.requestPictureInPicture()).catch(() => {});
       });
-      $("speed").addEventListener("click", () => {
-        const open = $("speed-menu").hidden;
-        $("speed-menu").hidden = !open;
-        $("speed").setAttribute("aria-expanded", String(open));
-        showControls();
+      $("speed").addEventListener("click", () => toggleMenu($("speed"), $("speed-menu")));
+      $("more").addEventListener("click", () => toggleMenu($("more"), $("more-menu")));
+      $("save-frame").addEventListener("click", saveFrame);
+      $("undo").addEventListener("click", () => undoSave?.().catch((error) => showSaved(error.message)));
+      $("menu-copy").addEventListener("click", async () => {
+        closeMenu();
+        await copyLink();
+        showSaved("Link copied");
       });
+      $("more-menu").addEventListener("click", (event) => { if (event.target.closest("a")) closeMenu(); });
       document.addEventListener("pointerdown", (event) => {
-        if (!$("speed-menu").hidden && !event.target.closest("#speed-menu, #speed")) closeMenu();
+        if (menuOpen() && !event.target.closest("#speed-menu, #speed, #more-menu, #more")) closeMenu();
+        if ($("open-in").open && !event.target.closest("#open-in")) $("open-in").open = false;
       });
 
       stage.addEventListener("pointermove", (event) => { if (event.pointerType !== "touch") showControls(); });
@@ -528,6 +703,14 @@
       }
       video.addEventListener("loadedmetadata", () => {
         drawProgress();
+        // The player takes the film's true shape, so the page's edges are the picture's edges
+        if (video.videoWidth) {
+          document.documentElement.style.setProperty("--ar", video.videoWidth + " / " + video.videoHeight);
+          $("quality").textContent = video.videoWidth + " × " + video.videoHeight;
+          $("quality").hidden = false;
+        }
+        $("runtime").textContent = clock(video.duration);
+        $("runtime").hidden = !Number.isFinite(video.duration);
         const saved = Number(recall(resumeKey));
         if (!resumeChecked && saved > 15 && saved < video.duration - 30) {
           video.currentTime = saved;
@@ -549,7 +732,7 @@
       video.addEventListener("error", () => { $("fail").hidden = false; stage.classList.remove("paused"); });
       video.addEventListener("seeked", paintAmbience);
       video.addEventListener("loadeddata", paintAmbience);
-      setInterval(() => { if (!video.paused && !document.hidden) paintAmbience(); }, 700);
+      setInterval(() => { if (!video.paused && !document.hidden) paintAmbience(); }, 300);
 
       document.addEventListener("fullscreenchange", () => {
         const on = Boolean(document.fullscreenElement);
@@ -560,6 +743,19 @@
       document.addEventListener("keydown", (event) => {
         const target = event.target;
         if (event.ctrlKey || event.metaKey || event.altKey || target.matches("input, textarea, select")) return;
+        if (event.key === "Escape" && menuOpen()) {
+          const opener = menus.find(([, menu]) => !menu.hidden)[0];
+          closeMenu();
+          opener.focus({ preventScroll: true });
+          return;
+        }
+        if (menuOpen() && (event.key === "ArrowDown" || event.key === "ArrowUp")) {
+          const items = [...menus.find(([, menu]) => !menu.hidden)[1].querySelectorAll("button:not([hidden]), a")];
+          const next = items.indexOf(document.activeElement) + (event.key === "ArrowDown" ? 1 : -1);
+          items[(next + items.length) % items.length].focus({ preventScroll: true });
+          event.preventDefault();
+          return;
+        }
         const onControl = target.matches("button, a");
         const slidingVolume = target === $("volume");
         switch (event.key) {
@@ -591,6 +787,7 @@
       drawVolume();
       drawSpeeds();
       drawProgress();
+      checkOwner();
     }
     startPlayer();
   </script>

@@ -263,5 +263,10 @@ def poster_file(_id) -> str:
     return os.path.join(POSTER_DIR, f"{_id}.jpg")
 
 
+def poster_url(file_data: dict, absolute: bool = True) -> str:
+    version = f"?v={file_data['poster_v']}" if file_data.get("poster_v") else ""
+    return f"{Server.URL if absolute else '/'}poster/{file_data['_id']}.jpg{version}"
+
+
 def cast_photo_file(_id) -> str:
     return os.path.join(CAST_DIR, f"{_id}.jpg")

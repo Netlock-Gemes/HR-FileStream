@@ -1,17 +1,22 @@
 @font-face { font-family: "Manrope"; src: url("/assets/manrope.woff2") format("woff2"); font-weight: 200 800; font-display: swap; }
 @font-face { font-family: "Instrument Serif"; src: url("/assets/instrument-serif.woff2") format("woff2"); font-display: swap; }
 :root {
-  --curtain: #160c12;
-  --curtain-deep: #0e070b;
-  --panel: #21131a;
-  --panel-up: #2c1a23;
-  --line: rgba(255, 236, 220, .1);
-  --line-up: rgba(255, 236, 220, .2);
-  --screen: #f8f1e7;
-  --muted: #b8a6a3;
-  --amber: #f5bd55;
-  --amber-deep: #d98f2b;
-  --danger: #ff9d8f;
+  /* Palette: Obsidian. Swap only this block to recolour the whole site. */
+  --bg: #0c0c0d;
+  --bg-deep: #070708;
+  --surface: #161617;
+  --surface-up: #212123;
+  --text: #f2efe9;
+  --muted: #a6a39d;
+  --accent: #f2efe9;
+  --on-accent: #111112;
+  --danger: #ff9388;
+  --ink-rgb: 244, 241, 235;
+  --accent-rgb: 242, 239, 233;
+  --deep-rgb: 7, 7, 8;
+  --surface-rgb: 22, 22, 23;
+  --line: rgba(var(--ink-rgb), .1);
+  --line-up: rgba(var(--ink-rgb), .2);
   --title: "Instrument Serif", "Iowan Old Style", Palatino, Georgia, serif;
   --ui: "Manrope", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto, sans-serif;
   --ease: cubic-bezier(.2, .8, .2, 1);
@@ -22,10 +27,12 @@
 html { -webkit-text-size-adjust: 100%; -webkit-font-smoothing: antialiased; -moz-osx-font-smoothing: grayscale; }
 body {
   min-height: 100dvh;
-  background: var(--curtain);
-  color: var(--screen);
+  background: var(--bg);
+  color: var(--text);
   font: 450 1rem/1.55 var(--ui);
+  scrollbar-color: var(--line-up) transparent;
 }
+::selection { background: rgba(var(--accent-rgb), .28); color: var(--text); }
 h1 {
   font: 400 clamp(2.1rem, 1.5rem + 3vw, 3.75rem)/1.04 var(--title);
   letter-spacing: -0.012em;
@@ -41,8 +48,8 @@ h1 {
   padding: 0.5rem 1.05rem;
   border: 1px solid var(--line);
   border-radius: 10px;
-  background: var(--panel);
-  color: var(--screen);
+  background: var(--surface);
+  color: var(--text);
   font: 600 0.92rem/1.2 var(--ui);
   letter-spacing: -0.003em;
   text-decoration: none;
@@ -50,17 +57,16 @@ h1 {
   touch-action: manipulation;
   transition: background-color .18s, border-color .18s, transform .12s var(--ease), box-shadow .18s;
 }
-.button:hover { background: var(--panel-up); border-color: var(--line-up); }
+.button:hover { background: var(--surface-up); border-color: var(--line-up); }
 .button:active { transform: scale(.97); }
 .button.lit {
   border-color: transparent;
-  background: linear-gradient(180deg, #fbd07c, var(--amber) 55%, #eaa93e);
-  box-shadow: inset 0 1px 0 rgba(255, 255, 255, .4), 0 6px 22px -8px rgba(245, 189, 85, .6);
-  color: #241305;
+  background: var(--accent);
+  color: var(--on-accent);
 }
 .button.lit:hover { filter: brightness(1.06); }
 .button:disabled { opacity: .4; cursor: default; }
-:focus-visible { outline: 2px solid var(--amber); outline-offset: 2px; }
+:focus-visible { outline: 2px solid var(--accent); outline-offset: 2px; }
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }

@@ -9,7 +9,7 @@ from FileStream.config import Server
 from FileStream.server.exceptions import FIleNotFound
 from FileStream.utils.database import db
 from FileStream.utils.human_readable import humanbytes
-from FileStream.utils.library import cast_photo_file, poster_path
+from FileStream.utils.library import cast_photo_file, poster_path, poster_url
 
 routes = web.RouteTableDef()
 
@@ -37,11 +37,6 @@ def addon_json(data: dict, max_age: int = 60) -> web.Response:
         "Access-Control-Allow-Origin": "*",
         "Cache-Control": f"public, max-age={max_age}",
     })
-
-
-def poster_url(file_data: dict, absolute: bool = True) -> str:
-    version = f"?v={file_data['poster_v']}" if file_data.get("poster_v") else ""
-    return f"{Server.URL if absolute else '/'}poster/{file_data['_id']}.jpg{version}"
 
 
 def person_photo_url(person: dict) -> str:
