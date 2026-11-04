@@ -1,5 +1,6 @@
 """The viewer site: an OTT-style home for every logged-in account, and the admin's "View as user"."""
 import json
+import logging
 from aiohttp import web
 from FileStream.server import auth
 from FileStream.server.exceptions import FIleNotFound
@@ -196,4 +197,20 @@ async def save_progress(request: web.Request):
     if not (0 <= position <= duration < 7 * 24 * 3600):
         raise ValueError("That position is outside the video.")
     await db.save_progress(account_of(request), str(file_data["_id"]), position, duration)
+    return web.json_response({"ok": True})
+
+
+@routes.post("/api/client-error")
+async def client_error(request: web.Request):
+    """The viewer page reports its own failures here, so a blank screen on someone's phone leaves a trace."""
+    try:
+        data = json.loads((await request.content.read(2048)).decode("utf-8", "replace"))
+    except ValueError:
+        data = {}
+    clean = lambda value, size: " ".join(str(value or "").split())[:size]
+    logging.warning(
+        f"Viewer page error for {request['user']['name']} on {clean(data.get('page'), 80)}: "
+        f"{clean(data.get('message'), 300)} ({clean(data.get('where'), 200)}) "
+        f"browser: {clean(request.headers.get('User-Agent'), 200)}"
+    )
     return web.json_response({"ok": True})

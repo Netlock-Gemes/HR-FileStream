@@ -16,7 +16,7 @@
     img { display: block; max-width: 100%; }
 
     /* ---------- Chrome ---------- */
-    .chrome { position: fixed; inset: 0 0 auto; z-index: 10; }
+    .chrome { position: fixed; top: 0; right: 0; left: 0; z-index: 10; }
     .preview {
       display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .25rem .75rem; min-height: 2.5rem;
       padding: .3rem var(--gutter); background: var(--text); color: var(--bg); font-size: .86rem; font-weight: 600;
@@ -58,24 +58,24 @@
     .menu button { width: 100%; min-height: 2.5rem; padding: 0 .75rem; border: 0; border-radius: 8px; background: none; color: var(--text); font: 600 .9rem/1 var(--ui); text-align: left; cursor: pointer; }
     .menu button:hover { background: rgba(var(--ink-rgb), .08); }
 
-    main { min-height: 100dvh; padding-bottom: 5rem; }
+    main { min-height: 100vh; min-height: 100dvh; padding-bottom: 5rem; }
     main.plain { padding-top: calc(var(--chrome-top, 0px) + var(--chrome-h) + clamp(1rem, 3vw, 2.25rem)); }
     .page-head { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem 1.5rem; padding: 0 var(--gutter) 1.5rem; }
     .page-head h1 { font-size: clamp(2.2rem, 1.6rem + 2.6vw, 3.6rem); }
     .page-head p { color: var(--muted); }
 
     /* ---------- Hero ---------- */
-    .hero { position: relative; display: grid; min-height: clamp(30rem, 78dvh, 54rem); isolation: isolate; overflow: clip; }
+    .hero { position: relative; display: grid; min-height: 34rem; min-height: clamp(30rem, 78vh, 54rem); min-height: clamp(30rem, 78dvh, 54rem); isolation: isolate; overflow: clip; }
     .slide { grid-area: 1 / 1; position: relative; display: grid; align-content: end; opacity: 0; visibility: hidden; transition: opacity .9s var(--ease), visibility 0s .9s; }
     .slide.on { opacity: 1; visibility: visible; transition: opacity .9s var(--ease); }
-    .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: var(--bg-deep); }
+    .backdrop { position: absolute; top: 0; right: 0; bottom: 0; left: 0; z-index: -1; overflow: hidden; background: var(--bg-deep); }
     .backdrop img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 9s linear; }
     .slide.on .backdrop img { transform: scale(1); }
     /* Small Telegram thumbnails would blur at full width, so they become light and a framed still instead */
     .soft .backdrop img { filter: blur(38px) saturate(1.3); transform: scale(1.25); opacity: .7; }
     .soft.on .backdrop img { transform: scale(1.2); }
     .backdrop::after {
-      content: ""; position: absolute; inset: 0;
+      content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0;
       background:
         linear-gradient(90deg, rgba(var(--deep-rgb), .92) 0%, rgba(var(--deep-rgb), .55) 38%, transparent 70%),
         linear-gradient(0deg, var(--bg) 0%, rgba(var(--deep-rgb), .2) 32%, transparent 55%),
@@ -134,12 +134,12 @@
     .thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
     .thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s, transform .5s var(--ease); }
     .thumb img.ready { opacity: 1; }
-    .thumb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0); transition: box-shadow .2s; }
+    .thumb::after { content: ""; position: absolute; top: 0; right: 0; bottom: 0; left: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0); transition: box-shadow .2s; }
     .card:hover .thumb img, .card:focus-visible .thumb img { transform: scale(1.04); }
     .card:hover .thumb::after, .card:focus-visible .thumb::after { box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb), .9); }
     .card:focus-visible { outline: none; }
     .length { position: absolute; right: .45rem; bottom: .45rem; padding: .18rem .42rem; border-radius: 6px; background: rgba(var(--deep-rgb), .78); color: #fff; font: 700 .74rem/1.3 var(--ui); font-variant-numeric: tabular-nums; }
-    .watched { position: absolute; inset: auto 0 0; height: 4px; background: rgba(255, 255, 255, .25); }
+    .watched { position: absolute; right: 0; bottom: 0; left: 0; height: 4px; background: rgba(255, 255, 255, .25); }
     .watched i { display: block; height: 100%; background: var(--accent); }
     .card-title { font-size: .95rem; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
     .card-sub { margin-top: -.35rem; color: var(--muted); font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
@@ -160,7 +160,7 @@
 
     /* ---------- Title ---------- */
     .feature .copy { width: min(100%, 46rem); }
-    .feature { min-height: clamp(30rem, 72dvh, 50rem); }
+    .feature { min-height: clamp(30rem, 72vh, 50rem); min-height: clamp(30rem, 72dvh, 50rem); }
     .resume-bar { width: min(100%, 22rem); height: 4px; border-radius: 4px; background: rgba(var(--ink-rgb), .2); overflow: hidden; }
     .resume-bar i { display: block; height: 100%; background: var(--accent); }
     .people { display: flex; flex-wrap: wrap; gap: .4rem; }
@@ -184,6 +184,15 @@
     .cast-head { display: flex; align-items: center; gap: 1.25rem; }
     .cast-head .face { width: clamp(5rem, 9vw, 7rem); flex: none; }
 
+    /* Browsers before aspect-ratio (iOS 14 and older) would collapse thumbnails to nothing */
+    @supports not (aspect-ratio: 1) {
+      .thumb, .face, .soft .still { height: 0; padding-top: 56.25%; }
+      .face { position: relative; padding-top: 100%; }
+      .thumb img, .face img { position: absolute; top: 0; left: 0; }
+      .face { line-height: 0; }
+    }
+    .boot { padding: calc(var(--chrome-h) + 3rem) var(--gutter); color: var(--muted); }
+    .boot strong { display: block; margin-bottom: .4rem; color: var(--text); font: 400 1.8rem/1.15 var(--title); }
     .skeleton { border-radius: 10px; background: linear-gradient(90deg, var(--surface) 30%, var(--surface-up) 50%, var(--surface) 70%) 0 0 / 300% 100%; animation: shimmer 1.4s linear infinite; }
     @keyframes shimmer { to { background-position: -150% 0; } }
     .notice { padding: 0 var(--gutter); color: var(--danger); }
@@ -232,8 +241,42 @@
       </div>
     </header>
   </div>
-  <main id="app"></main>
+  <main id="app"><p class="boot">Loading…</p></main>
 
+  <script>
+    // Plain ES5 on purpose: it must run even where the main script can't, and say what went wrong
+    (function () {
+      var reported = false;
+      function report(message, where) {
+        if (reported) return;
+        reported = true;
+        var app = document.getElementById("app");
+        if (app) {
+          app.className = "plain";
+          app.innerHTML = '<div class="empty"><strong>This page didn\'t load</strong>' +
+            'Update your browser, or open the site in Chrome or Safari. If it keeps happening, tell the admin.</div>';
+        }
+        try {
+          var request = new XMLHttpRequest();
+          request.open("POST", "/api/client-error");
+          request.setRequestHeader("X-HR-Dashboard", "1");
+          request.setRequestHeader("Content-Type", "application/json");
+          request.send(JSON.stringify({ message: String(message).slice(0, 300), where: String(where || "").slice(0, 200), page: location.pathname }));
+        } catch (ignored) {}
+      }
+      window.addEventListener("error", function (event) {
+        // Only script failures; a missing poster image is not a broken page
+        if (event.message) report(event.message, (event.filename || "") + ":" + (event.lineno || 0));
+      });
+      window.hrReport = report;
+      if (!Element.prototype.replaceChildren) {
+        Element.prototype.replaceChildren = function () {
+          while (this.firstChild) this.removeChild(this.firstChild);
+          this.append.apply(this, arguments);
+        };
+      }
+    })();
+  </script>
   <script>
     const app = document.getElementById("app");
     const chrome = document.getElementById("chrome");
@@ -265,8 +308,13 @@
     const CHECK = '<path d="m5 12.5 4.5 4.5L19 7.5"/>';
     const CHEVRON = (dir) => `<path d="${dir < 0 ? "m15 5-7 7 7 7" : "m9 5 7 7-7 7"}"/>`;
 
+    const API_TIMEOUT = 20000;
     async function api(path, method = "GET") {
-      const response = await fetch("/api" + path, { method, headers: { "X-HR-Dashboard": "1" } });
+      const controller = new AbortController();
+      const timer = setTimeout(() => controller.abort(), API_TIMEOUT);
+      const response = await fetch("/api" + path, { method, headers: { "X-HR-Dashboard": "1" }, signal: controller.signal })
+        .catch(() => { throw new Error("The server took too long to answer. Try again."); })
+        .finally(() => clearTimeout(timer));
       if (response.status === 401) { location.href = "/login"; throw new Error("Log in again."); }
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "That didn't load. Try again.");
@@ -386,7 +434,7 @@
 
     function skeletonPage() {
       return h("div", { "aria-busy": "true", "aria-label": "Loading" },
-        h("div", { class: "skeleton", style: "height: min(70dvh, 40rem); border-radius: 0" }),
+        h("div", { class: "skeleton", style: "height: 34rem; max-height: 70vh; border-radius: 0" }),
         h("div", { class: "rows", style: "margin-top: 2rem" }, [0, 1].map(() =>
           h("div", { class: "track", style: "overflow: hidden" }, [0, 1, 2, 3, 4, 5].map(() => h("div", { class: "skeleton", style: "aspect-ratio: 16 / 9" }))))));
     }
@@ -553,12 +601,19 @@
         app.replaceChildren(...[content].flat().filter(Boolean));
       } catch (error) {
         if (ticket !== renderId) return;
+        if (!/no longer exists|Log in again/.test(error.message)) window.hrReport && reportSoftly(error);
         app.className = "plain";
         app.replaceChildren(empty(error.message === "That no longer exists." ? "This video isn't available" : "Something didn't load", h("p", {},
           error.message === "That no longer exists." ? "It may have been removed. " : "Check your connection. ",
           h("a", { href: "/", "data-link": true }, "Go home"))));
       }
       onScroll();
+    }
+
+    // Logs a failed view on the server without replacing the page's own message
+    function reportSoftly(error) {
+      fetch("/api/client-error", { method: "POST", headers: { "X-HR-Dashboard": "1", "Content-Type": "application/json" },
+        body: JSON.stringify({ message: String(error.message).slice(0, 300), where: "render", page: location.pathname }) }).catch(() => {});
     }
 
     function go(url) {
