@@ -279,7 +279,7 @@
   </script>
   <script>
     const app = document.getElementById("app");
-    const chrome = document.getElementById("chrome");
+    const chromeBar = document.getElementById("chrome");
     const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
     const HERO_EVERY = 8000;
     let heroTimer, searchTimer, renderId = 0;
@@ -634,9 +634,9 @@
     addEventListener("popstate", render);
 
     // The bar turns solid once the page scrolls past the top of the hero
-    function onScroll() { chrome.classList.toggle("solid", scrollY > 24 || app.classList.contains("plain")); }
+    function onScroll() { chromeBar.classList.toggle("solid", scrollY > 24 || app.classList.contains("plain")); }
     addEventListener("scroll", onScroll, { passive: true });
-    document.documentElement.style.setProperty("--chrome-top", (chrome.querySelector(".preview")?.offsetHeight || 0) + "px");
+    document.documentElement.style.setProperty("--chrome-top", (chromeBar.querySelector(".preview")?.offsetHeight || 0) + "px");
 
     /* Arrow keys move between cards like a TV remote: left/right along a row, up/down across rows */
     document.addEventListener("keydown", (event) => {
