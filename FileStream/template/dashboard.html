@@ -20,8 +20,12 @@
     .tab svg { flex: none; width: 1.2rem; height: 1.2rem; margin-right: .65rem; fill: none; stroke: currentColor; stroke-width: 1.7; stroke-linecap: round; stroke-linejoin: round; }
     .tab:hover { background: rgba(var(--ink-rgb), .05); color: var(--text); }
     .tab[aria-current="page"] { background: var(--surface); color: var(--accent); box-shadow: inset 0 0 0 1px var(--line); }
-    #logout { margin-top: auto; }
+    #logout { display: grid; gap: .4rem; margin-top: auto; }
     #logout button { width: 100%; }
+    .pill { display: inline-flex; align-items: center; min-height: 1.6rem; padding: 0 .55rem; border-radius: 999px; background: rgba(var(--ink-rgb), .08); color: var(--muted); font-size: .78rem; font-weight: 700; }
+    .pill.off { background: rgba(255, 147, 136, .12); color: var(--danger); }
+    .secret { display: flex; flex-wrap: wrap; align-items: center; gap: .5rem; margin-top: .9rem; padding: .75rem .9rem; border-radius: 12px; background: var(--surface); box-shadow: inset 0 0 0 1px var(--line-up); }
+    .secret code { display: inline-block; padding: .3rem .55rem; font-size: .92rem; }
     main { padding: clamp(1.5rem, 3vw, 2.5rem) clamp(1rem, 3.5vw, 3rem) 8rem; min-width: 0; }
     .head { display: flex; flex-wrap: wrap; gap: .5rem 1.5rem; align-items: baseline; justify-content: space-between; margin-bottom: 1.5rem; }
     .note { font-size: .92rem; }
@@ -211,7 +215,11 @@
     <button class="tab" data-view="catalogs"><svg viewBox="0 0 24 24" aria-hidden="true"><rect x="3" y="4" width="18" height="6" rx="2"/><rect x="3" y="14" width="18" height="6" rx="2"/></svg>Catalogs</button>
     <button class="tab" data-view="channels"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M4 11.500 20 4l-3.500 16-5-5.500-3 3-.500-5z"/><path d="m8 12.500 8.500-5.500"/></svg>Channels</button>
     <button class="tab" data-view="addon"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M10 4h4v3h3a2 2 0 0 1 2 2v3h-3v4h3v1a2 2 0 0 1-2 2H7a2 2 0 0 1-2-2V9a2 2 0 0 1 2-2h3z"/></svg>Addon</button>
-    <form id="logout" method="post" action="/dashboard/logout"><button class="button small" type="submit">Log out</button></form>
+    <button class="tab" data-view="users"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="9" cy="8.5" r="3.2"/><path d="M3.5 19c.6-3.3 2.8-5.2 5.5-5.2s4.9 1.9 5.5 5.2"/><path d="M15.5 5.6a3 3 0 0 1 0 5.8M17.5 14.2c1.6.7 2.6 2.300 3 4.8"/></svg>Users</button>
+    <div id="logout">
+      <form method="post" action="/view-as-user"><button class="button small" type="submit">View as user</button></form>
+      <form method="post" action="/logout"><button class="button small" type="submit">Log out</button></form>
+    </div>
   </nav>
   <main id="view"></main>
   <dialog id="drawer" aria-label="Edit video"></dialog>
@@ -253,7 +261,7 @@
         headers: { "X-HR-Dashboard": "1", ...(body && !isFile ? { "Content-Type": "application/json" } : {}) },
         body: isFile ? body : body ? JSON.stringify(body) : undefined,
       });
-      if (response.status === 401) { location.href = "/dashboard/login"; throw new Error("Log in again."); }
+      if (response.status === 401) { location.href = "/login"; throw new Error("Log in again."); }
       const data = await response.json().catch(() => ({}));
       if (!response.ok) throw new Error(data.error || "That didn't work. Try again.");
       return data;
@@ -825,14 +833,122 @@
             h("button", { class: "button lit", onclick: () => copy(url, "Addon link copied") }, "Copy addon link"),
             h("a", { class: "button", href: url.replace(/^https?:/, "stremio:") }, "Open in Stremio")),
         ) : h("p", { class: "empty" }, "Set ADDON_TOKEN on the server to turn the addon on."),
-        h("form", { id: "logout-mobile", method: "post", action: "/dashboard/logout", style: "margin-top: 2rem" },
-          h("button", { class: "button small", type: "submit" }, "Log out")),
+        h("div", { id: "logout-mobile", class: "row", style: "margin-top: 2rem" },
+          h("form", { method: "post", action: "/view-as-user" }, h("button", { class: "button small", type: "submit" }, "View as user")),
+          h("form", { method: "post", action: "/logout" }, h("button", { class: "button small", type: "submit" }, "Log out"))),
       );
+    }
+
+    /* ---------- Users ---------- */
+
+    // Long enough to be safe, and free of look-alike characters so it can be read out or typed from a phone
+    function newPassword() {
+      const letters = "abcdefghjkmnpqrstuvwxyzABCDEFGHJKLMNPQRSTUVWXYZ23456789";
+      const bytes = crypto.getRandomValues(new Uint32Array(12));
+      return [...bytes].map((value) => letters[value % letters.length]).join("").replace(/(.{4})(?!$)/g, "$1-");
+    }
+
+    function seen(time) {
+      if (!time) return "Never signed in";
+      const minutes = Math.round((Date.now() / 1000 - time) / 60);
+      if (minutes < 10) return "Active now";
+      if (minutes < 60) return "Seen " + minutes + " min ago";
+      if (minutes < 60 * 24) return "Seen " + Math.round(minutes / 60) + " h ago";
+      return "Seen " + new Date(time * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short" });
+    }
+
+    // Shown once, right after it's set, so it can be passed on
+    function secretNote(username, password) {
+      return h("div", { class: "secret", role: "status" },
+        h("span", {}, "Password for ", h("strong", {}, username), ":"), h("code", {}, password),
+        h("button", { class: "button small", type: "button", onclick: () => copy("Username: " + username + "\nPassword: " + password, "Login details copied") }, "Copy login details"),
+        h("span", { class: "note" }, "It won't be shown again."));
+    }
+
+    async function showUsers() {
+      let accounts = (await api("/accounts")).accounts;
+      const list = h("div", { class: "list" });
+      const note = h("div");
+      const username = h("input", { type: "text", class: "grow", placeholder: "Username", "aria-label": "Username", autocomplete: "off", autocapitalize: "none", spellcheck: "false" });
+      const password = h("input", { type: "text", class: "grow", placeholder: "Password, at least 8 characters", "aria-label": "Password", autocomplete: "off", spellcheck: "false" });
+
+      async function change(account, body, message) {
+        const updated = await attempt(() => api("/accounts/" + account.id, "PATCH", body), message);
+        if (updated) Object.assign(account, updated);
+        drawList();
+        return updated;
+      }
+
+      function line(account) {
+        const reset = h("input", { type: "text", placeholder: "New password", "aria-label": "New password for " + account.username, autocomplete: "off", spellcheck: "false", style: "width: 13rem" });
+        const panel = h("form", {
+          class: "row panel", hidden: true,
+          onsubmit: async (event) => {
+            event.preventDefault();
+            const value = reset.value || newPassword();
+            if (await change(account, { password: value }, "Password changed. " + account.username + " is signed out everywhere.")) {
+              note.replaceChildren(secretNote(account.username, value));
+            }
+          },
+        }, reset,
+          h("button", { class: "button small", type: "button", onclick: () => { reset.value = newPassword(); } }, "Generate"),
+          h("button", { class: "button small lit", type: "submit" }, "Save password"));
+        return h("div", { class: "line" },
+          h("span", { class: "face", style: "cursor: default" }, account.username[0].toUpperCase()),
+          h("div", { class: "grow" },
+            h("strong", {}, account.username), " ",
+            account.disabled ? h("span", { class: "pill off" }, "Disabled") : null,
+            h("p", { class: "note" }, seen(account.last_seen) + " · added " + new Date(account.created * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }))),
+          h("button", { class: "button small", type: "button", onclick: () => { panel.hidden = !panel.hidden; if (!panel.hidden) reset.focus(); } }, "Reset password"),
+          h("button", { class: "button small", type: "button", onclick: () => change(account, { sign_out: true }, account.username + " is signed out everywhere") }, "Sign out everywhere"),
+          h("button", {
+            class: "button small", type: "button",
+            onclick: () => change(account, { disabled: !account.disabled }, account.disabled ? account.username + " can log in again" : account.username + " can't log in now"),
+          }, account.disabled ? "Enable" : "Disable"),
+          h("button", {
+            class: "button small danger", type: "button",
+            onclick: () => confirm("Delete " + account.username + "? Their login, My List and watch progress are removed.") && attempt(async () => {
+              await api("/accounts/" + account.id, "DELETE");
+              accounts = accounts.filter((item) => item.id !== account.id);
+              drawList();
+            }, account.username + " deleted"),
+          }, "Delete"),
+          panel);
+      }
+
+      function drawList() {
+        list.replaceChildren(...accounts.map(line));
+        if (!accounts.length) list.replaceChildren(h("p", { class: "empty" }, "No users yet. Add one above, then send them the login details."));
+      }
+
+      view.replaceChildren(
+        h("div", { class: "head" }, h("h1", {}, "Users"), h("p", { class: "note" }, "Only you can add users or change their passwords. Users see the site, not this dashboard.")),
+        h("form", {
+          class: "row",
+          onsubmit: (event) => {
+            event.preventDefault();
+            const chosen = password.value || newPassword();
+            attempt(async () => {
+              const account = await api("/accounts", "POST", { username: username.value.trim(), password: chosen });
+              accounts = [...accounts, account].sort((a, b) => a.username.localeCompare(b.username));
+              note.replaceChildren(secretNote(account.username, chosen));
+              username.value = "";
+              password.value = "";
+              drawList();
+            }, "User added");
+          },
+        }, username, password,
+          h("button", { class: "button", type: "button", onclick: () => { password.value = newPassword(); } }, "Generate password"),
+          h("button", { class: "button lit", type: "submit" }, "Add user")),
+        note,
+        list,
+      );
+      drawList();
     }
 
     /* ---------- Navigation ---------- */
 
-    const views = { media: showMedia, cast: showCast, catalogs: showCatalogs, channels: showChannels, addon: showAddon };
+    const views = { media: showMedia, cast: showCast, catalogs: showCatalogs, channels: showChannels, addon: showAddon, users: showUsers };
 
     async function go(name) {
       if (!views[name]) name = "media";

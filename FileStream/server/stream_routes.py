@@ -8,6 +8,7 @@ from aiohttp import web
 from aiohttp.client_exceptions import ClientConnectionResetError
 from FileStream.bot import multi_clients, work_loads, FileStream
 from FileStream.config import Telegram
+from FileStream.server import auth
 from FileStream.server.exceptions import FIleNotFound, InvalidHash
 from FileStream import utils, StartTime, __version__
 from FileStream.utils.custom_dl import CHUNK_SIZE
@@ -37,7 +38,11 @@ async def root_route_handler(_):
 async def watch_route_handler(request: web.Request):
     try:
         path = request.match_info["path"]
-        return web.Response(text=await render_page(path), content_type='text/html')
+        user = await auth.current_user(request)
+        if user:
+            user = {**user, "viewer_site": auth.wants_viewer_site(request, user)}
+        return web.Response(text=await render_page(path, user=user), content_type='text/html',
+                            headers={"Cache-Control": "no-store"})
     except InvalidHash as e:
         raise web.HTTPForbidden(text=e.message)
     except FIleNotFound as e:

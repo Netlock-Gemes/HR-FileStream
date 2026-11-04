@@ -1,3 +1,5 @@
+import os
+import re
 import json
 import time
 import asyncio
@@ -29,20 +31,32 @@ POSTER_SIDE = 1280
 PHOTO_SIDE = 500
 
 
+def api_error(text: str, status: int) -> web.Response:
+    return web.json_response({"error": text}, status=status)
+
+
 @web.middleware
 async def dashboard_guard(request: web.Request, handler):
-    if request.path.startswith(API + "/") or request.path == API:
-        if not auth.is_logged_in(request):
-            return web.json_response({"error": "Log in again."}, status=401)
-        if request.method != "GET" and auth.API_HEADER not in request.headers:
-            return web.json_response({"error": "Blocked request."}, status=403)
-        try:
-            return await handler(request)
-        except FIleNotFound:
-            return web.json_response({"error": "That no longer exists."}, status=404)
-        except ValueError as e:
-            return web.json_response({"error": str(e)}, status=400)
-    return await handler(request)
+    """The dashboard API is the admin's alone; the viewer API needs any login. Both refuse cross-site writes."""
+    path = request.path
+    admin_api = path == API or path.startswith(API + "/")
+    viewer_api = path.startswith("/api/")
+    if not (admin_api or viewer_api):
+        return await handler(request)
+
+    user = await auth.current_user(request)
+    if not user:
+        return api_error("Log in again.", 401)
+    if admin_api and user["role"] != "admin":
+        return api_error("Only the admin can do that.", 403)
+    if request.method != "GET" and auth.API_HEADER not in request.headers:
+        return api_error("Blocked request.", 403)
+    try:
+        return await handler(request)
+    except FIleNotFound:
+        return api_error("That no longer exists.", 404)
+    except ValueError as e:
+        return api_error(str(e), 400)
 
 
 async def read_json(request: web.Request) -> dict:
@@ -78,52 +92,82 @@ async def read_image(request: web.Request) -> bytes:
 
 #---------------------[ LOGIN ]---------------------#
 
-@routes.get("/", allow_head=True)
-async def home(_: web.Request):
-    raise web.HTTPFound("/dashboard")
+def home_for(request: web.Request, user: dict) -> str:
+    return "/" if auth.wants_viewer_site(request, user) else "/dashboard"
 
 
-@routes.get("/login")
-async def short_login(_: web.Request):
-    raise web.HTTPFound("/dashboard/login")
+def login_form(error=None, status=200) -> web.Response:
+    return web.Response(text=render_file("login.html", error=error), content_type="text/html", status=status,
+                        headers={"Cache-Control": "no-store"})
 
 
 @routes.get("/dashboard")
 async def dashboard_page(request: web.Request):
-    if not auth.is_logged_in(request):
-        raise web.HTTPFound("/dashboard/login")
-    return web.Response(text=render_file("dashboard.html"), content_type="text/html", headers={"Cache-Control": "no-store"})
+    user = await auth.current_user(request)
+    if not user:
+        raise web.HTTPFound("/login")
+    if user["role"] != "admin":
+        raise web.HTTPFound("/")
+    return web.Response(text=render_file("dashboard.html", admin=user["name"]), content_type="text/html",
+                        headers={"Cache-Control": "no-store"})
+
+
+@routes.get("/login")
+async def login_page(request: web.Request):
+    user = await auth.current_user(request)
+    if user:
+        raise web.HTTPFound(home_for(request, user))
+    return login_form()
 
 
 @routes.get("/dashboard/login")
-async def login_page(request: web.Request):
-    if auth.is_logged_in(request):
-        raise web.HTTPFound("/dashboard")
-    return web.Response(text=render_file("login.html", error=None), content_type="text/html")
+async def old_login_page(_: web.Request):
+    raise web.HTTPFound("/login")
 
 
+@routes.post("/login")
 @routes.post("/dashboard/login")
 async def login(request: web.Request):
     ip = auth.client_ip(request)
     if auth.is_locked(ip):
-        text = render_file("login.html", error="Too many tries. Wait 15 minutes, then log in again.")
-        return web.Response(text=text, content_type="text/html", status=429)
+        return login_form("Too many tries. Wait 15 minutes, then log in again.", 429)
 
     form = await request.post()
-    if await asyncio.to_thread(auth.check_login, str(form.get("user", "")), str(form.get("password", ""))):
-        response = web.HTTPFound("/dashboard")
-        auth.start_session(response)
-        raise response
+    identity = await auth.check_login(str(form.get("user", "")), str(form.get("password", "")))
+    if not identity:
+        auth.record_failure(ip)
+        return login_form("That username or password is wrong.", 401)
 
-    auth.record_failure(ip)
-    text = render_file("login.html", error="That username or password is wrong.")
-    return web.Response(text=text, content_type="text/html", status=401)
+    auth.failures.pop(ip, None)
+    response = web.HTTPFound("/dashboard" if identity["id"] == auth.ADMIN else "/")
+    auth.start_session(response, identity)
+    # Each login starts in the admin's own view
+    response.del_cookie(auth.VIEW_COOKIE, path="/")
+    raise response
 
 
+@routes.post("/logout")
 @routes.post("/dashboard/logout")
-async def logout(request: web.Request):
-    response = web.HTTPFound("/dashboard/login")
+async def logout(_: web.Request):
+    response = web.HTTPFound("/login")
     auth.end_session(response)
+    raise response
+
+
+@routes.post("/view-as-user")
+async def view_as_user(request: web.Request):
+    user = await auth.current_user(request)
+    if not user or user["role"] != "admin":
+        raise web.HTTPFound("/login")
+    response = web.HTTPFound("/")
+    response.set_cookie(auth.VIEW_COOKIE, "user", path="/", httponly=True, secure=Server.HAS_SSL, samesite="Lax")
+    raise response
+
+
+@routes.post("/view-as-admin")
+async def view_as_admin(_: web.Request):
+    response = web.HTTPFound("/dashboard")
+    response.del_cookie(auth.VIEW_COOKIE, path="/")
     raise response
 
 
@@ -499,6 +543,75 @@ async def delete_catalog(request: web.Request):
         raise ValueError("Turn this catalog off instead. It can't be deleted.")
     await db.delete_catalog(_id)
     await db.bump_addon_revision()
+    return web.json_response({"ok": True})
+
+
+#---------------------[ ACCOUNTS ]---------------------#
+
+USERNAME = re.compile(r"[A-Za-z0-9._-]{3,32}")
+
+
+def to_account(account: dict) -> dict:
+    return {
+        "id": str(account["_id"]),
+        "username": account["username"],
+        "disabled": bool(account.get("disabled")),
+        "created": account.get("created", 0),
+        "last_seen": account.get("last_seen", 0),
+    }
+
+
+def check_password(password) -> str:
+    password = str(password or "")
+    if len(password) < auth.MIN_PASSWORD:
+        raise ValueError(f"Use at least {auth.MIN_PASSWORD} characters for the password.")
+    if len(password) > 200:
+        raise ValueError("That password is too long.")
+    return password
+
+
+async def new_hash(password: str) -> str:
+    return await asyncio.to_thread(auth.hash_password, password, os.urandom(16))
+
+
+@routes.get(f"{API}/accounts")
+async def list_accounts(_: web.Request):
+    return web.json_response({"accounts": [to_account(account) for account in await db.list_accounts()]})
+
+
+@routes.post(f"{API}/accounts")
+async def add_account(request: web.Request):
+    data = await read_json(request)
+    username = str(data.get("username", "")).strip()
+    if not USERNAME.fullmatch(username):
+        raise ValueError("Usernames are 3 to 32 letters, numbers, dots, dashes or underscores.")
+    if username.lower() == Server.DASHBOARD_USER.lower():
+        raise ValueError("That username is taken.")
+    account = await db.add_account(username, await new_hash(check_password(data.get("password"))))
+    return web.json_response(to_account(account))
+
+
+@routes.patch(API + "/accounts/{id}")
+async def update_account(request: web.Request):
+    account = await db.get_account(request.match_info["id"])
+    data = await read_json(request)
+    fields, sign_out = {}, bool(data.get("sign_out"))
+    if "password" in data:
+        fields["password_hash"] = await new_hash(check_password(data["password"]))
+        sign_out = True
+    if "disabled" in data:
+        fields["disabled"] = bool(data["disabled"])
+        sign_out = sign_out or fields["disabled"]
+    await db.update_account(account["_id"], fields, sign_out=sign_out)
+    auth.forget_account(account["_id"])
+    return web.json_response(to_account(await db.get_account(account["_id"])))
+
+
+@routes.delete(API + "/accounts/{id}")
+async def delete_account(request: web.Request):
+    account = await db.get_account(request.match_info["id"])
+    await db.delete_account(account["_id"])
+    auth.forget_account(account["_id"])
     return web.json_response({"ok": True})
 
 

@@ -53,3 +53,13 @@ proxy_read_timeout 1h;
 proxy_send_timeout 1h;
 send_timeout 1h;
 ```
+
+## Users and the viewer site
+
+Everyone logs in at `/login`. The admin account (`DASHBOARD_USER`) lands on the dashboard; every other account is a viewer and gets the streaming site at `/`.
+
+- Only the admin can add users, set or reset passwords, disable accounts or sign them out (dashboard → Users). Viewers can't change their own password.
+- Resetting a password, disabling an account or choosing "Sign out everywhere" logs that user out on every device at once.
+- "View as user" in the dashboard shows the viewer site exactly as a user sees it, with a bar to get back.
+- Viewers see every video that isn't hidden, keep My List and Continue watching across devices, and can still open videos in VLC or MX Player, download them or copy links.
+- `/watch/{id}` links keep working without a login. Stream links (`/dl/...`) are not tied to an account, so anyone with a link can play it.

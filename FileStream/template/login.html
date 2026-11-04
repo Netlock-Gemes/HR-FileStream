@@ -4,7 +4,7 @@
   <meta charset="UTF-8" />
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <meta name="robots" content="noindex" />
-  <title>HR Library</title>
+  <title>Log in · HR Filestream</title>
   <style>
     {% include "theme.css" %}
     body {
@@ -30,9 +30,9 @@
 </head>
 <body>
   <main>
-    <h1>HR Library</h1>
+    <h1>HR Filestream</h1>
     {% if error %}<p class="error" role="alert">{{ error }}</p>{% endif %}
-    <form method="post" action="/dashboard/login">
+    <form method="post" action="/login">
       <label>Username <input name="user" autocomplete="username" autocapitalize="none" required autofocus /></label>
       <label>Password <input name="password" type="password" autocomplete="current-password" required /></label>
       <button class="button lit" type="submit">Log in</button>

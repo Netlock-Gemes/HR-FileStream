@@ -37,12 +37,20 @@ class Database:
         self.catalogs = self.db.catalogs
         self.channels = self.db.channels
         self.settings = self.db.settings
+        # Website logins. The bot's Telegram users stay in `users`
+        self.accounts = self.db.accounts
+        self.progress = self.db.progress
+        self.saved = self.db.saved
 
     async def ensure_indexes(self):
         await self.file.create_index([("user_id", 1), ("file_unique_id", 1)])
         await self.file.create_index([("library", 1), ("time", -1)])
         await self.file.create_index([("channel_id", 1), ("message_id", 1)], sparse=True)
         await self.people.create_index("name", unique=True, collation=NAME_COLLATION)
+        await self.accounts.create_index("username", unique=True, collation=NAME_COLLATION)
+        await self.progress.create_index([("account", 1), ("file", 1)], unique=True)
+        await self.progress.create_index([("account", 1), ("updated", -1)])
+        await self.saved.create_index([("account", 1), ("file", 1)], unique=True)
 
 #---------------------[ NEW USER ]---------------------#
     def new_user(self, id):
@@ -355,6 +363,89 @@ class Database:
     async def bump_addon_revision(self):
         """Apps re-read a manifest whose version changed."""
         await self.settings.update_one({"_id": "addon"}, {"$inc": {"revision": 1}}, upsert=True)
+
+# ---------------------[ ACCOUNTS ]---------------------#
+    async def list_accounts(self):
+        return await self.accounts.find().collation(NAME_COLLATION).sort("username", 1).to_list(length=None)
+
+    async def get_account(self, _id):
+        try:
+            account = await self.accounts.find_one({"_id": ObjectId(_id)})
+        except (InvalidId, TypeError):
+            account = None
+        if not account:
+            raise FIleNotFound
+        return account
+
+    async def find_account(self, username):
+        return await self.accounts.find_one({"username": username}, collation=NAME_COLLATION)
+
+    async def add_account(self, username, password_hash):
+        account = {"username": username, "password_hash": password_hash, "disabled": False,
+                   "session_version": 0, "created": time.time(), "last_seen": 0}
+        try:
+            result = await self.accounts.insert_one(account)
+        except pymongo.errors.DuplicateKeyError:
+            raise ValueError("That username is taken.")
+        account["_id"] = result.inserted_id
+        return account
+
+    async def update_account(self, _id, fields=None, sign_out=False):
+        update = {}
+        if fields:
+            update["$set"] = fields
+        if sign_out:
+            update["$inc"] = {"session_version": 1}
+        if update:
+            await self.accounts.update_one({"_id": ObjectId(_id)}, update)
+
+    async def delete_account(self, _id):
+        await self.accounts.delete_one({"_id": ObjectId(_id)})
+        await self.progress.delete_many({"account": str(_id)})
+        await self.saved.delete_many({"account": str(_id)})
+
+    async def files_by_ids(self, ids):
+        """Visible library videos, in the order of ids."""
+        object_ids = []
+        for _id in ids:
+            try:
+                object_ids.append(ObjectId(_id))
+            except (InvalidId, TypeError):
+                pass
+        files = await self.file.find({"$and": [{"_id": {"$in": object_ids}}, self.library_query(hidden=False)]}).to_list(length=None)
+        by_id = {str(file_data["_id"]): file_data for file_data in files}
+        return [by_id[str(_id)] for _id in object_ids if str(_id) in by_id]
+
+# ---------------------[ WATCHING ]---------------------#
+    async def save_progress(self, account, file, position, duration):
+        await self.progress.update_one(
+            {"account": account, "file": file},
+            {"$set": {"position": position, "duration": duration, "updated": time.time()}},
+            upsert=True,
+        )
+
+    async def get_progress(self, account, file):
+        return await self.progress.find_one({"account": account, "file": file})
+
+    async def recent_progress(self, account, limit=40):
+        return await self.progress.find({"account": account}).sort("updated", -1).limit(limit).to_list(length=limit)
+
+    async def progress_for(self, account, files):
+        rows = await self.progress.find({"account": account, "file": {"$in": files}}).to_list(length=None)
+        return {row["file"]: row for row in rows}
+
+    async def set_saved(self, account, file, saved):
+        if saved:
+            await self.saved.update_one({"account": account, "file": file}, {"$setOnInsert": {"time": time.time()}}, upsert=True)
+        else:
+            await self.saved.delete_one({"account": account, "file": file})
+
+    async def is_saved(self, account, file):
+        return bool(await self.saved.find_one({"account": account, "file": file}, {"_id": 1}))
+
+    async def saved_files(self, account, limit=200):
+        rows = await self.saved.find({"account": account}).sort("time", -1).limit(limit).to_list(length=limit)
+        return [row["file"] for row in rows]
 
 # ---------------------[ CHANNELS ]---------------------#
     async def list_channels(self):

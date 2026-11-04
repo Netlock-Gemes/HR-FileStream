@@ -17,7 +17,7 @@ def render_file(template: str, **context) -> str:
     return templates.get_template(template).render(**context)
 
 
-async def render_page(db_id, template=None):
+async def render_page(db_id, template=None, user=None):
     file_data = await db.get_file(db_id)
     mime_type = file_data['mime_type'] or ""
 
@@ -36,4 +36,8 @@ async def render_page(db_id, template=None):
         poster=poster_url(file_data, absolute=False) if file_data.get("library") else None,
         file_id=str(file_data["_id"]) if file_data.get("library") else None,
         cast=file_data.get("cast") or [],
+        # Logged-in viewers get a way home and progress kept across devices; links still work logged out
+        signed_in=bool(user),
+        home_url=("/" if user["viewer_site"] else "/dashboard") if user else None,
+        home_label=("Home" if user["viewer_site"] else "Library") if user else None,
     )

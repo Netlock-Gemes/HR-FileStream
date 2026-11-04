@@ -1,0 +1,614 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+  <meta name="robots" content="noindex" />
+  <meta name="theme-color" content="#0c0c0d" />
+  <title>HR Filestream</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns=%27http://www.w3.org/2000/svg%27 viewBox=%270 0 32 32%27%3E%3Crect width=%2732%27 height=%2732%27 rx=%277%27 fill=%27%230c0c0d%27/%3E%3Cpath d=%27M11 8l14 8-14 8z%27 fill=%27%23f2efe9%27/%3E%3C/svg%3E" />
+  <style>
+    {% include "theme.css" %}
+    /* One column of rows under a cinematic hero; every edge hangs off --gutter */
+    :root { --gutter: clamp(16px, 4vw, 3.5rem); --card: clamp(13.5rem, 10rem + 9vw, 19rem); --chrome-h: 4.25rem; }
+    body { overflow-x: clip; }
+    a { color: inherit; }
+    img { display: block; max-width: 100%; }
+
+    /* ---------- Chrome ---------- */
+    .chrome { position: fixed; inset: 0 0 auto; z-index: 10; }
+    .preview {
+      display: flex; flex-wrap: wrap; align-items: center; justify-content: center; gap: .25rem .75rem; min-height: 2.5rem;
+      padding: .3rem var(--gutter); background: var(--text); color: var(--bg); font-size: .86rem; font-weight: 600;
+    }
+    .preview button { min-height: 2rem; padding: 0 .6rem; border: 0; border-radius: 7px; background: rgba(var(--deep-rgb), .1); color: inherit; font: 700 .86rem/1 var(--ui); text-decoration: underline; text-underline-offset: 3px; cursor: pointer; }
+    .bar {
+      display: flex; align-items: center; gap: clamp(.75rem, 3vw, 2.5rem); height: var(--chrome-h);
+      padding: 0 max(var(--gutter), env(safe-area-inset-right)) 0 max(var(--gutter), env(safe-area-inset-left));
+      background: linear-gradient(180deg, rgba(var(--deep-rgb), .75), transparent);
+      transition: background-color .3s, box-shadow .3s, backdrop-filter .3s;
+    }
+    .solid .bar { background-color: rgba(var(--deep-rgb), .82); backdrop-filter: blur(18px) saturate(1.3); -webkit-backdrop-filter: blur(18px) saturate(1.3); box-shadow: 0 1px 0 var(--line); }
+    .brand { display: inline-flex; align-items: center; gap: .5rem; flex: none; font: 400 1.35rem/1 var(--title); text-decoration: none; }
+    .brand svg { width: 1.05rem; height: 1.05rem; margin-left: -.2rem; fill: var(--accent); }
+    .links { display: flex; gap: .15rem; }
+    .links a, .tool {
+      display: inline-flex; align-items: center; min-height: 2.6rem; padding: 0 .7rem; border-radius: 9px; border: 0; background: none;
+      color: var(--muted); font: 600 .92rem/1 var(--ui); text-decoration: none; cursor: pointer; transition: color .15s, background-color .15s;
+    }
+    .links a:hover, .tool:hover { color: var(--text); }
+    .links a[aria-current="page"] { color: var(--text); }
+    .tools { display: flex; align-items: center; gap: .25rem; margin-left: auto; }
+    .tool svg { width: 1.25rem; height: 1.25rem; fill: none; stroke: currentColor; stroke-width: 1.8; stroke-linecap: round; }
+    .account { position: relative; }
+    .account summary { list-style: none; }
+    .account summary::-webkit-details-marker { display: none; }
+    .avatar {
+      display: grid; place-items: center; width: 2.25rem; height: 2.25rem; border-radius: 50%;
+      background: var(--surface-up); box-shadow: inset 0 0 0 1px var(--line-up); color: var(--text); font: 400 1.1rem/1 var(--title); text-transform: uppercase;
+    }
+    .account .tool { padding: 0 .25rem; }
+    .menu {
+      position: absolute; right: 0; top: calc(100% + .4rem); display: grid; min-width: 13rem; padding: .35rem; border-radius: 12px;
+      background: rgba(var(--deep-rgb), .94); backdrop-filter: blur(18px); -webkit-backdrop-filter: blur(18px);
+      box-shadow: 0 18px 44px -14px rgba(0, 0, 0, .85), 0 0 0 1px var(--line);
+    }
+    .menu p { padding: .55rem .75rem .45rem; color: var(--muted); font-size: .84rem; }
+    .menu p b { display: block; color: var(--text); font-size: .95rem; }
+    .menu button { width: 100%; min-height: 2.5rem; padding: 0 .75rem; border: 0; border-radius: 8px; background: none; color: var(--text); font: 600 .9rem/1 var(--ui); text-align: left; cursor: pointer; }
+    .menu button:hover { background: rgba(var(--ink-rgb), .08); }
+
+    main { min-height: 100dvh; padding-bottom: 5rem; }
+    main.plain { padding-top: calc(var(--chrome-top, 0px) + var(--chrome-h) + clamp(1rem, 3vw, 2.25rem)); }
+    .page-head { display: flex; flex-wrap: wrap; align-items: end; gap: .5rem 1.5rem; padding: 0 var(--gutter) 1.5rem; }
+    .page-head h1 { font-size: clamp(2.2rem, 1.6rem + 2.6vw, 3.6rem); }
+    .page-head p { color: var(--muted); }
+
+    /* ---------- Hero ---------- */
+    .hero { position: relative; display: grid; min-height: clamp(30rem, 78dvh, 54rem); isolation: isolate; overflow: clip; }
+    .slide { grid-area: 1 / 1; position: relative; display: grid; align-content: end; opacity: 0; visibility: hidden; transition: opacity .9s var(--ease), visibility 0s .9s; }
+    .slide.on { opacity: 1; visibility: visible; transition: opacity .9s var(--ease); }
+    .backdrop { position: absolute; inset: 0; z-index: -1; overflow: hidden; background: var(--bg-deep); }
+    .backdrop img { width: 100%; height: 100%; object-fit: cover; transform: scale(1.04); transition: transform 9s linear; }
+    .slide.on .backdrop img { transform: scale(1); }
+    /* Small Telegram thumbnails would blur at full width, so they become light and a framed still instead */
+    .soft .backdrop img { filter: blur(38px) saturate(1.3); transform: scale(1.25); opacity: .7; }
+    .soft.on .backdrop img { transform: scale(1.2); }
+    .backdrop::after {
+      content: ""; position: absolute; inset: 0;
+      background:
+        linear-gradient(90deg, rgba(var(--deep-rgb), .92) 0%, rgba(var(--deep-rgb), .55) 38%, transparent 70%),
+        linear-gradient(0deg, var(--bg) 0%, rgba(var(--deep-rgb), .2) 32%, transparent 55%),
+        linear-gradient(180deg, rgba(var(--deep-rgb), .55), transparent 22%);
+    }
+    .still { display: none; }
+    .soft .still {
+      display: block; position: absolute; right: var(--gutter); top: 50%; width: min(38vw, 34rem); aspect-ratio: 16 / 9; object-fit: cover;
+      border-radius: 14px; transform: translateY(-46%); box-shadow: 0 40px 90px -30px rgba(0, 0, 0, .9), 0 0 0 1px var(--line-up);
+    }
+    .copy { display: grid; gap: 1rem; width: min(100%, 40rem); padding: 0 var(--gutter) clamp(3.5rem, 9vh, 6rem); }
+    .copy h1, .copy h2 { font: 400 clamp(2.5rem, 1.6rem + 3.6vw, 4.8rem)/1 var(--title); letter-spacing: -.015em; text-wrap: balance; overflow-wrap: anywhere; }
+    /* Raw file names run long, so they step down a size instead of filling the screen */
+    .copy .long { font-size: clamp(1.9rem, 1.4rem + 1.9vw, 3.1rem); line-height: 1.06; }
+    .meta { display: flex; flex-wrap: wrap; gap: .1rem .6rem; color: var(--muted); font-size: .95rem; font-variant-numeric: tabular-nums; }
+    .meta > * + *::before { content: "·"; margin-right: .6rem; opacity: .6; }
+    .blurb { max-width: 62ch; color: rgba(var(--ink-rgb), .82); display: -webkit-box; -webkit-line-clamp: 3; -webkit-box-orient: vertical; overflow: hidden; }
+    .actions { display: flex; flex-wrap: wrap; gap: .6rem; }
+    .actions .button { min-height: 3rem; padding: 0 1.35rem; font-size: .98rem; }
+    .button svg { width: 1.1rem; height: 1.1rem; fill: currentColor; }
+    .button.glass { background: rgba(var(--ink-rgb), .12); border-color: transparent; backdrop-filter: blur(12px); -webkit-backdrop-filter: blur(12px); }
+    .button.glass:hover { background: rgba(var(--ink-rgb), .2); }
+    .button.glass svg.line { fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .dots { position: absolute; right: var(--gutter); bottom: clamp(3.5rem, 9vh, 6rem); display: flex; gap: .15rem; }
+    .dots button { width: 2.25rem; height: 2.25rem; padding: 0; border: 0; background: none; cursor: pointer; }
+    .dots button::before { content: ""; display: block; width: 1.4rem; height: 3px; margin: 0 auto; border-radius: 3px; background: rgba(var(--ink-rgb), .3); transition: background-color .3s, width .3s var(--ease); }
+    .dots button[aria-current="true"]::before { width: 2rem; background: var(--text); }
+
+    /* ---------- Rows ---------- */
+    .rows { position: relative; display: grid; grid-template-columns: minmax(0, 1fr); gap: clamp(1.75rem, 3.5vw, 2.75rem); }
+    .row { min-width: 0; }
+    .hero + .rows { margin-top: clamp(-3rem, -5vh, -1.5rem); }
+    .row-head { display: flex; align-items: baseline; justify-content: space-between; gap: 1rem; padding: 0 var(--gutter) .7rem; }
+    .row-head h2 { font: 400 clamp(1.45rem, 1.2rem + .9vw, 1.9rem)/1.1 var(--title); }
+    .row-head a { color: var(--muted); font-size: .88rem; font-weight: 600; text-decoration: none; }
+    .row-head a:hover { color: var(--text); }
+    .rail { position: relative; }
+    .track {
+      display: grid; grid-auto-flow: column; grid-auto-columns: var(--card); gap: clamp(.6rem, 1.2vw, 1rem);
+      padding: .25rem var(--gutter) .5rem; overflow-x: auto; scroll-snap-type: x mandatory; scroll-padding-inline: var(--gutter);
+      scrollbar-width: none; overscroll-behavior-x: contain;
+    }
+    .track::-webkit-scrollbar { display: none; }
+    .track > * { scroll-snap-align: start; }
+    .nudge {
+      position: absolute; top: .25rem; bottom: 3.2rem; z-index: 2; display: grid; place-items: center; width: calc(var(--gutter) - .25rem); min-width: 2.75rem;
+      border: 0; background: linear-gradient(90deg, var(--bg), transparent); color: var(--text); cursor: pointer; opacity: 0; transition: opacity .2s;
+    }
+    .nudge.next { right: 0; background: linear-gradient(270deg, var(--bg), transparent); }
+    .nudge.prev { left: 0; }
+    .nudge svg { width: 1.6rem; height: 1.6rem; fill: none; stroke: currentColor; stroke-width: 2; stroke-linecap: round; stroke-linejoin: round; }
+    .nudge[disabled] { visibility: hidden; }
+    @media (hover: hover) { .rail:hover .nudge { opacity: 1; } }
+
+    .card { display: grid; gap: .55rem; align-content: start; min-width: 0; border-radius: 12px; text-decoration: none; outline-offset: 3px; }
+    .thumb { position: relative; aspect-ratio: 16 / 9; overflow: hidden; border-radius: 10px; background: var(--surface); box-shadow: 0 0 0 1px var(--line); }
+    .thumb img { width: 100%; height: 100%; object-fit: cover; opacity: 0; transition: opacity .35s, transform .5s var(--ease); }
+    .thumb img.ready { opacity: 1; }
+    .thumb::after { content: ""; position: absolute; inset: 0; border-radius: inherit; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0); transition: box-shadow .2s; }
+    .card:hover .thumb img, .card:focus-visible .thumb img { transform: scale(1.04); }
+    .card:hover .thumb::after, .card:focus-visible .thumb::after { box-shadow: inset 0 0 0 2px rgba(var(--accent-rgb), .9); }
+    .card:focus-visible { outline: none; }
+    .length { position: absolute; right: .45rem; bottom: .45rem; padding: .18rem .42rem; border-radius: 6px; background: rgba(var(--deep-rgb), .78); color: #fff; font: 700 .74rem/1.3 var(--ui); font-variant-numeric: tabular-nums; }
+    .watched { position: absolute; inset: auto 0 0; height: 4px; background: rgba(255, 255, 255, .25); }
+    .watched i { display: block; height: 100%; background: var(--accent); }
+    .card-title { font-size: .95rem; font-weight: 600; line-height: 1.3; display: -webkit-box; -webkit-line-clamp: 2; -webkit-box-orient: vertical; overflow: hidden; overflow-wrap: anywhere; }
+    .card-sub { margin-top: -.35rem; color: var(--muted); font-size: .84rem; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+
+    .face-card { display: grid; justify-items: center; gap: .55rem; text-align: center; text-decoration: none; }
+    .faces .track { grid-auto-columns: clamp(6.5rem, 5rem + 4vw, 8.5rem); }
+    .face { display: grid; place-items: center; width: 100%; aspect-ratio: 1; overflow: hidden; border-radius: 50%; background: var(--surface-up); box-shadow: 0 0 0 1px var(--line); color: var(--muted); font: 400 2.4rem/1 var(--title); transition: box-shadow .2s; }
+    .face img { width: 100%; height: 100%; object-fit: cover; }
+    .face-card:hover .face, .face-card:focus-visible .face { box-shadow: 0 0 0 2px var(--accent); }
+    .face-card:focus-visible { outline: none; }
+    .face-card b { font-size: .92rem; font-weight: 600; line-height: 1.25; }
+    .face-card small { margin-top: -.4rem; color: var(--muted); font-size: .8rem; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(min(100%, 15rem), 1fr)); gap: 1.6rem 1rem; padding: 0 var(--gutter); }
+    .more-button { display: flex; justify-content: center; padding-top: 2rem; }
+    .empty { padding: 3rem var(--gutter); color: var(--muted); }
+    .empty strong { display: block; margin-bottom: .35rem; color: var(--text); font: 400 1.8rem/1.15 var(--title); }
+
+    /* ---------- Title ---------- */
+    .feature .copy { width: min(100%, 46rem); }
+    .feature { min-height: clamp(30rem, 72dvh, 50rem); }
+    .resume-bar { width: min(100%, 22rem); height: 4px; border-radius: 4px; background: rgba(var(--ink-rgb), .2); overflow: hidden; }
+    .resume-bar i { display: block; height: 100%; background: var(--accent); }
+    .people { display: flex; flex-wrap: wrap; gap: .4rem; }
+    .person {
+      display: inline-flex; align-items: center; gap: .5rem; min-height: 2.5rem; padding: .2rem .8rem .2rem .25rem; border-radius: 999px;
+      background: rgba(var(--ink-rgb), .09); text-decoration: none; font-size: .9rem; font-weight: 600; transition: background-color .15s;
+    }
+    .person:hover { background: rgba(var(--ink-rgb), .16); }
+    .person .face { width: 2rem; font-size: 1rem; box-shadow: none; }
+
+    /* ---------- Search ---------- */
+    .search-box { padding: 0 var(--gutter) 1.75rem; }
+    .search-box input {
+      width: min(100%, 44rem); min-height: 3.5rem; padding: 0 1.1rem 0 3.1rem; border: 1px solid var(--line); border-radius: 14px;
+      background: var(--surface) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 20 20'%3E%3Ccircle cx='9' cy='9' r='5.5' fill='none' stroke='%23a6a39d' stroke-width='1.7'/%3E%3Cpath d='m13.5 13.5 3.5 3.5' stroke='%23a6a39d' stroke-width='1.7' stroke-linecap='round'/%3E%3C/svg%3E") no-repeat 1.05rem center / 1.25rem;
+      color: var(--text); font: 500 1.1rem/1 var(--ui);
+    }
+    .search-box input:focus { outline: none; border-color: var(--line-up); box-shadow: 0 0 0 4px rgba(var(--accent-rgb), .1); }
+    .search-box input::placeholder { color: var(--muted); }
+    .section-label { padding: 0 var(--gutter) .7rem; font: 400 1.45rem/1.1 var(--title); }
+    .cast-head { display: flex; align-items: center; gap: 1.25rem; }
+    .cast-head .face { width: clamp(5rem, 9vw, 7rem); flex: none; }
+
+    .skeleton { border-radius: 10px; background: linear-gradient(90deg, var(--surface) 30%, var(--surface-up) 50%, var(--surface) 70%) 0 0 / 300% 100%; animation: shimmer 1.4s linear infinite; }
+    @keyframes shimmer { to { background-position: -150% 0; } }
+    .notice { padding: 0 var(--gutter); color: var(--danger); }
+
+    @media (max-width: 40rem) {
+      :root { --chrome-h: 3.6rem; --card: 72vw; }
+      .links a { padding: 0 .5rem; font-size: .88rem; }
+      .brand span { display: none; }
+      .hero { min-height: 34rem; }
+      .soft .still { display: none; }
+      .backdrop::after {
+        background: linear-gradient(0deg, var(--bg) 0%, rgba(var(--deep-rgb), .7) 45%, rgba(var(--deep-rgb), .2) 75%), linear-gradient(180deg, rgba(var(--deep-rgb), .6), transparent 30%);
+      }
+      .dots { right: auto; left: calc(var(--gutter) - .5rem); bottom: .75rem; }
+      .copy { padding-bottom: 3.75rem; }
+      .hero + .rows { margin-top: .75rem; }
+      .actions .button { flex: 1 1 auto; }
+      .grid { grid-template-columns: repeat(auto-fill, minmax(min(100%, 10rem), 1fr)); gap: 1.2rem .75rem; }
+      .faces .track { grid-auto-columns: 6rem; }
+    }
+  </style>
+</head>
+<body>
+  <div class="chrome" id="chrome">
+    {% if previewing %}
+    <form class="preview" method="post" action="/view-as-admin">
+      <span>You're seeing the site as a user sees it.</span>
+      <button type="submit">Back to admin</button>
+    </form>
+    {% endif %}
+    <header class="bar">
+      <a class="brand" href="/" data-link aria-label="HR Filestream home"><svg viewBox="0 0 24 24" aria-hidden="true"><path d="M7 4.6v14.8c0 .8.9 1.3 1.6.8l11.3-7.4c.6-.4.6-1.3 0-1.7L8.6 3.8C7.9 3.3 7 3.8 7 4.6z"/></svg><span>HR Filestream</span></a>
+      <nav class="links" aria-label="Main">
+        <a href="/" data-link>Home</a>
+        <a href="/list" data-link>My List</a>
+      </nav>
+      <div class="tools">
+        <a class="tool" href="/search" data-link aria-label="Search"><svg viewBox="0 0 24 24" aria-hidden="true"><circle cx="10.5" cy="10.5" r="6.5"/><path d="m16 16 4.5 4.5"/></svg></a>
+        <details class="account" id="account">
+          <summary class="tool" aria-label="Account"><span class="avatar">{{ user[:1] }}</span></summary>
+          <div class="menu">
+            <p>Signed in as <b>{{ user }}</b></p>
+            <form method="post" action="/logout"><button type="submit">Log out</button></form>
+          </div>
+        </details>
+      </div>
+    </header>
+  </div>
+  <main id="app"></main>
+
+  <script>
+    const app = document.getElementById("app");
+    const chrome = document.getElementById("chrome");
+    const reduceMotion = matchMedia("(prefers-reduced-motion: reduce)").matches;
+    const HERO_EVERY = 8000;
+    let heroTimer, searchTimer, renderId = 0;
+
+    function h(tag, attrs = {}, ...children) {
+      const node = document.createElement(tag);
+      for (const [key, value] of Object.entries(attrs)) {
+        if (key.startsWith("on")) node.addEventListener(key.slice(2), value);
+        else if (key === "class") node.className = value;
+        else if (typeof value === "boolean") { if (value) node.setAttribute(key, ""); }
+        else if (key === "value") node.value = value;
+        else if (value !== undefined && value !== null) node.setAttribute(key, value);
+      }
+      node.append(...children.flat().filter((child) => child !== null && child !== undefined && child !== false));
+      return node;
+    }
+
+    function svg(markup, cls = "") {
+      const box = document.createElement("span");
+      box.innerHTML = `<svg viewBox="0 0 24 24" class="${cls}" aria-hidden="true">${markup}</svg>`;
+      return box.firstChild;
+    }
+    const PLAY = '<path d="M7 4.6v14.8c0 .8.9 1.3 1.6.8l11.3-7.4c.6-.4.6-1.3 0-1.7L8.6 3.8C7.9 3.3 7 3.8 7 4.6z"/>';
+    const INFO = '<circle cx="12" cy="12" r="9"/><path d="M12 11v5.5M12 7.6v.1"/>';
+    const PLUS = '<path d="M12 5v14M5 12h14"/>';
+    const CHECK = '<path d="m5 12.5 4.5 4.5L19 7.5"/>';
+    const CHEVRON = (dir) => `<path d="${dir < 0 ? "m15 5-7 7 7 7" : "m9 5 7 7-7 7"}"/>`;
+
+    async function api(path, method = "GET") {
+      const response = await fetch("/api" + path, { method, headers: { "X-HR-Dashboard": "1" } });
+      if (response.status === 401) { location.href = "/login"; throw new Error("Log in again."); }
+      const data = await response.json().catch(() => ({}));
+      if (!response.ok) throw new Error(data.error || "That didn't load. Try again.");
+      return data;
+    }
+
+    function runtime(seconds) {
+      const minutes = Math.round(seconds / 60);
+      if (!minutes) return "";
+      return minutes >= 60 ? Math.floor(minutes / 60) + " h " + (minutes % 60 ? (minutes % 60) + " min" : "") : minutes + " min";
+    }
+    function clockLength(seconds) {
+      if (!seconds) return "";
+      const total = Math.round(seconds), hours = Math.floor(total / 3600), minutes = Math.floor(total / 60) % 60;
+      return hours ? hours + ":" + String(minutes).padStart(2, "0") + ":" + String(total % 60).padStart(2, "0") : minutes + ":" + String(total % 60).padStart(2, "0");
+    }
+    function addedOn(time) {
+      return time ? new Date(time * 1000).toLocaleDateString(undefined, { day: "numeric", month: "short", year: "numeric" }) : "";
+    }
+    function bytes(size) {
+      if (!size) return "";
+      const units = ["B", "KB", "MB", "GB", "TB"];
+      const power = Math.min(Math.floor(Math.log(size) / Math.log(1024)), units.length - 1);
+      return (size / 1024 ** power).toFixed(power > 2 ? 2 : 0) + " " + units[power];
+    }
+
+    function blurbOf(item) {
+      const squash = (text) => (text || "").toLowerCase().replace(/[\W_]+/g, "");
+      return item.description && squash(item.description) !== squash(item.title) ? item.description : "";
+    }
+    function heading(tag, text) { return h(tag, { class: text.length > 42 ? "long" : null }, text); }
+
+    function poster(src, cls = "") {
+      return h("img", { src, alt: "", loading: "lazy", decoding: "async", class: cls, onload: (event) => event.target.classList.add("ready") });
+    }
+
+    /* ---------- Pieces ---------- */
+
+    function card(item, { resume = false } = {}) {
+      const href = resume ? "/watch/" + item.id : "/title/" + item.id;
+      return h("a", { class: "card", href, ...(resume ? {} : { "data-link": true }) },
+        h("div", { class: "thumb" },
+          poster(item.poster),
+          item.duration && !item.progress ? h("span", { class: "length" }, clockLength(item.duration)) : null,
+          item.progress ? h("div", { class: "watched", "aria-label": Math.round(item.progress * 100) + "% watched" }, h("i", { style: `width:${item.progress * 100}%` })) : null),
+        h("div", { class: "card-title" }, item.title),
+        resume && item.duration ? h("div", { class: "card-sub" }, runtime(item.duration * (1 - item.progress)) + " left")
+          : item.cast?.length ? h("div", { class: "card-sub" }, item.cast.join(", ")) : null);
+    }
+
+    function face(person, size = "") {
+      return h("span", { class: "face " + size }, person.photo ? poster(person.photo, "ready") : (person.name[0] || "?"));
+    }
+
+    function faceCard(person) {
+      return h("a", { class: "face-card", href: "/cast/" + person.id, "data-link": true },
+        face(person), h("b", {}, person.name), h("small", {}, person.videos + (person.videos === 1 ? " video" : " videos")));
+    }
+
+    function row(title, items, { link = null, render = card, cls = "" } = {}) {
+      const track = h("div", { class: "track", role: "list" }, items.map((item) => {
+        const node = render(item);
+        node.setAttribute("role", "listitem");
+        return node;
+      }));
+      const prev = h("button", { class: "nudge prev", type: "button", "aria-label": "Scroll " + title + " left", tabindex: "-1" }, svg(CHEVRON(-1)));
+      const next = h("button", { class: "nudge next", type: "button", "aria-label": "Scroll " + title + " right", tabindex: "-1" }, svg(CHEVRON(1)));
+      const page = (dir) => track.scrollBy({ left: dir * track.clientWidth * 0.85, behavior: reduceMotion ? "auto" : "smooth" });
+      prev.addEventListener("click", () => page(-1));
+      next.addEventListener("click", () => page(1));
+      const ends = () => {
+        prev.disabled = track.scrollLeft < 8;
+        next.disabled = track.scrollLeft + track.clientWidth > track.scrollWidth - 8;
+      };
+      track.addEventListener("scroll", ends, { passive: true });
+      requestAnimationFrame(ends);
+      return h("section", { class: "row " + cls, "aria-label": title },
+        h("div", { class: "row-head" }, h("h2", {}, title), link ? h("a", { href: link, "data-link": true }, "See all") : null),
+        h("div", { class: "rail" }, prev, track, next));
+    }
+
+    function grid(items) {
+      return h("div", { class: "grid" }, items.map((item) => card(item)));
+    }
+
+    function empty(title, text) {
+      return h("div", { class: "empty" }, h("strong", {}, title), text);
+    }
+
+    function listButton(item) {
+      const button = h("button", { class: "button glass", type: "button", "aria-pressed": String(item.saved) });
+      const draw = () => {
+        button.setAttribute("aria-pressed", String(item.saved));
+        button.replaceChildren(svg(item.saved ? CHECK : PLUS, "line"), item.saved ? "In My List" : "My List");
+      };
+      button.addEventListener("click", async () => {
+        item.saved = !item.saved;
+        draw();
+        try {
+          await api("/list/" + item.id, item.saved ? "POST" : "DELETE");
+        } catch {
+          item.saved = !item.saved;
+          draw();
+        }
+      });
+      draw();
+      return button;
+    }
+
+    // A backdrop that stays sharp when the image is big enough, and turns to light plus a framed still when it isn't
+    function backdrop(src, slide) {
+      const image = h("img", { src, alt: "", decoding: "async" });
+      const still = h("img", { class: "still", src, alt: "" });
+      image.addEventListener("load", () => slide.classList.toggle("soft", image.naturalWidth < 960));
+      return [h("div", { class: "backdrop", "aria-hidden": "true" }, image), still];
+    }
+
+    function skeletonPage() {
+      return h("div", { "aria-busy": "true", "aria-label": "Loading" },
+        h("div", { class: "skeleton", style: "height: min(70dvh, 40rem); border-radius: 0" }),
+        h("div", { class: "rows", style: "margin-top: 2rem" }, [0, 1].map(() =>
+          h("div", { class: "track", style: "overflow: hidden" }, [0, 1, 2, 3, 4, 5].map(() => h("div", { class: "skeleton", style: "aspect-ratio: 16 / 9" }))))));
+    }
+
+    /* ---------- Views ---------- */
+
+    function hero(items) {
+      const section = h("section", { class: "hero", "aria-roledescription": "carousel", "aria-label": "Featured" });
+      const slides = items.map((item, index) => {
+        const slide = h("article", { class: "slide" + (index === 0 ? " on" : ""), "aria-hidden": String(index !== 0) });
+        const meta = [runtime(item.duration), item.cast.slice(0, 3).join(", "), addedOn(item.added)].filter(Boolean);
+        slide.append(...backdrop(item.poster, slide), h("div", { class: "copy" },
+          heading(index === 0 ? "h1" : "h2", item.title),
+          meta.length ? h("div", { class: "meta" }, meta.map((part) => h("span", {}, part))) : null,
+          blurbOf(item) ? h("p", { class: "blurb" }, blurbOf(item)) : null,
+          h("div", { class: "actions" },
+            h("a", { class: "button lit", href: "/watch/" + item.id }, svg(PLAY), "Play"),
+            h("a", { class: "button glass", href: "/title/" + item.id, "data-link": true }, svg(INFO, "line"), "More info"))));
+        return slide;
+      });
+      section.append(...slides);
+      if (slides.length < 2) return section;
+
+      let current = 0;
+      const dots = slides.map((_, index) => h("button", { type: "button", "aria-label": "Show featured " + (index + 1), "aria-current": String(index === 0), onclick: () => { show(index); restart(); } }));
+      function show(index) {
+        slides[current].classList.remove("on");
+        slides[current].setAttribute("aria-hidden", "true");
+        dots[current].setAttribute("aria-current", "false");
+        current = index;
+        slides[current].classList.add("on");
+        slides[current].setAttribute("aria-hidden", "false");
+        dots[current].setAttribute("aria-current", "true");
+      }
+      function restart() {
+        clearInterval(heroTimer);
+        if (reduceMotion) return;
+        heroTimer = setInterval(() => { if (!document.hidden && !section.matches(":hover, :focus-within")) show((current + 1) % slides.length); }, HERO_EVERY);
+      }
+      section.append(h("div", { class: "dots" }, dots));
+      restart();
+      return section;
+    }
+
+    async function showHome() {
+      const data = await api("/home");
+      const rows = [];
+      if (data.continue.length) rows.push(row("Continue watching", data.continue, { render: (item) => card(item, { resume: true }) }));
+      if (data.saved.length) rows.push(row("My List", data.saved, { link: "/list" }));
+      for (const catalog of data.rows) rows.push(row(catalog.name, catalog.items, { link: catalog.more && catalog.id ? "/browse/" + catalog.id : null }));
+      if (data.cast.length) rows.push(row("Cast", data.cast, { render: faceCard, cls: "faces" }));
+      if (!data.hero.length) {
+        app.className = "plain";
+        return empty("Nothing to watch yet", "New videos show up here as soon as they're added.");
+      }
+      return [hero(data.hero), h("div", { class: "rows" }, rows)];
+    }
+
+    async function showTitle(id) {
+      const item = await api("/title/" + id);
+      document.title = item.title + " · HR Filestream";
+      const slide = h("section", { class: "hero feature" });
+      const inner = h("article", { class: "slide on" });
+      const resumable = item.position > 15 && item.progress < 0.93;
+      const meta = [runtime(item.duration), addedOn(item.added), bytes(item.size)].filter(Boolean);
+      inner.append(...backdrop(item.poster, inner), h("div", { class: "copy" },
+        heading("h1", item.title),
+        meta.length ? h("div", { class: "meta" }, meta.map((part) => h("span", {}, part))) : null,
+        resumable ? h("div", { class: "resume-bar", "aria-label": Math.round(item.progress * 100) + "% watched" }, h("i", { style: `width:${item.progress * 100}%` })) : null,
+        h("div", { class: "actions" },
+          h("a", { class: "button lit", href: "/watch/" + item.id }, svg(PLAY), resumable ? "Resume" : "Play"),
+          resumable ? h("a", { class: "button glass", href: "/watch/" + item.id + "?t=0" }, "Start over") : null,
+          listButton(item)),
+        blurbOf(item) ? h("p", { class: "blurb", style: "-webkit-line-clamp: 6" }, blurbOf(item)) : null,
+        item.people.length ? h("div", { class: "people" }, item.people.map((person) =>
+          h("a", { class: "person", href: "/cast/" + person.id, "data-link": true }, face(person), person.name))) : null));
+      slide.append(inner);
+      return [slide, item.more.length ? h("div", { class: "rows" }, row(item.people.length ? "More with " + item.people[0].name : "More to watch", item.more)) : null];
+    }
+
+    async function showList() {
+      const data = await api("/list");
+      document.title = "My List · HR Filestream";
+      return [h("div", { class: "page-head" }, h("h1", {}, "My List")),
+        data.items.length ? grid(data.items) : empty("Your list is empty", "Open any video and choose My List to keep it here.")];
+    }
+
+    async function showBrowse(id) {
+      const data = await api("/browse/" + id);
+      document.title = data.name + " · HR Filestream";
+      const box = grid(data.items);
+      const more = h("div", { class: "more-button" });
+      const drawMore = () => more.replaceChildren(box.children.length < data.total ? h("button", {
+        class: "button", type: "button",
+        onclick: async (event) => {
+          event.target.disabled = true;
+          const page = await api("/browse/" + id + "?skip=" + box.children.length);
+          box.append(...page.items.map((item) => card(item)));
+          drawMore();
+        },
+      }, "Show more") : "");
+      drawMore();
+      return [h("div", { class: "page-head" }, h("h1", {}, data.name), h("p", {}, data.total + (data.total === 1 ? " video" : " videos"))), box, more];
+    }
+
+    async function showCast(id) {
+      const data = await api("/cast/" + id);
+      document.title = data.name + " · HR Filestream";
+      return [h("div", { class: "page-head cast-head" }, face(data), h("div", {}, h("h1", {}, data.name), h("p", {}, data.items.length + (data.items.length === 1 ? " video" : " videos")))),
+        data.items.length ? grid(data.items) : empty("No videos yet", "Videos with " + data.name + " will show up here.")];
+    }
+
+    async function showSearch() {
+      document.title = "Search · HR Filestream";
+      const params = new URLSearchParams(location.search);
+      const input = h("input", { type: "search", id: "search", placeholder: "Search titles, cast and tags", "aria-label": "Search", value: params.get("q") || "", autocomplete: "off", enterkeyhint: "search" });
+      const results = h("div", { "aria-live": "polite" });
+      let asked = 0;
+      async function run() {
+        const term = input.value.trim();
+        history.replaceState(null, "", term ? "/search?q=" + encodeURIComponent(term) : "/search");
+        const ticket = ++asked;
+        if (!term) { results.replaceChildren(empty("Find something to watch", "Type a title, a cast name or a tag.")); return; }
+        const data = await api("/search?q=" + encodeURIComponent(term)).catch(() => null);
+        if (ticket !== asked) return;
+        if (!data) { results.replaceChildren(h("p", { class: "notice" }, "Search didn't load. Try again.")); return; }
+        results.replaceChildren(
+          data.cast.length ? row("Cast", data.cast, { render: faceCard, cls: "faces" }) : "",
+          data.items.length ? h("div", {}, data.cast.length ? h("h2", { class: "section-label", style: "margin-top: 1.5rem" }, "Videos") : null, grid(data.items))
+            : data.cast.length ? "" : empty("Nothing matches “" + term + "”", "Check the spelling, or try a cast name."));
+      }
+      input.addEventListener("input", () => { clearTimeout(searchTimer); searchTimer = setTimeout(run, 220); });
+      run();
+      requestAnimationFrame(() => input.focus({ preventScroll: true }));
+      return [h("div", { class: "page-head" }, h("h1", {}, "Search")), h("div", { class: "search-box" }, input), results];
+    }
+
+    /* ---------- Router ---------- */
+
+    const ROUTES = [
+      [/^\/$/, showHome, true],
+      [/^\/title\/(\w+)$/, showTitle, true],
+      [/^\/list$/, showList],
+      [/^\/search$/, showSearch],
+      [/^\/cast\/(\w+)$/, showCast],
+      [/^\/browse\/([\w-]+)$/, showBrowse],
+    ];
+
+    async function render() {
+      const ticket = ++renderId;
+      clearInterval(heroTimer);
+      const path = location.pathname.replace(/\/+$/, "") || "/";
+      const [pattern, view, cinematic] = ROUTES.find(([candidate]) => candidate.test(path)) || ROUTES[0];
+      const params = (path.match(pattern) || []).slice(1);
+      document.title = "HR Filestream";
+      for (const link of document.querySelectorAll(".links a")) {
+        link.getAttribute("href") === path ? link.setAttribute("aria-current", "page") : link.removeAttribute("aria-current");
+      }
+      app.className = cinematic ? "" : "plain";
+      app.replaceChildren(skeletonPage());
+      try {
+        const content = await view(...params);
+        if (ticket !== renderId) return;
+        app.replaceChildren(...[content].flat().filter(Boolean));
+      } catch (error) {
+        if (ticket !== renderId) return;
+        app.className = "plain";
+        app.replaceChildren(empty(error.message === "That no longer exists." ? "This video isn't available" : "Something didn't load", h("p", {},
+          error.message === "That no longer exists." ? "It may have been removed. " : "Check your connection. ",
+          h("a", { href: "/", "data-link": true }, "Go home"))));
+      }
+      onScroll();
+    }
+
+    function go(url) {
+      history.pushState(null, "", url);
+      scrollTo(0, 0);
+      render();
+    }
+
+    document.addEventListener("click", (event) => {
+      const link = event.target.closest("a[data-link]");
+      if (link && !event.metaKey && !event.ctrlKey && !event.shiftKey && event.button === 0) {
+        event.preventDefault();
+        document.getElementById("account").open = false;
+        go(link.getAttribute("href"));
+      }
+      if (!event.target.closest("#account")) document.getElementById("account").open = false;
+    });
+    addEventListener("popstate", render);
+
+    // The bar turns solid once the page scrolls past the top of the hero
+    function onScroll() { chrome.classList.toggle("solid", scrollY > 24 || app.classList.contains("plain")); }
+    addEventListener("scroll", onScroll, { passive: true });
+    document.documentElement.style.setProperty("--chrome-top", (chrome.querySelector(".preview")?.offsetHeight || 0) + "px");
+
+    /* Arrow keys move between cards like a TV remote: left/right along a row, up/down across rows */
+    document.addEventListener("keydown", (event) => {
+      if (!["ArrowLeft", "ArrowRight", "ArrowUp", "ArrowDown"].includes(event.key) || event.target.matches("input, textarea")) return;
+      const current = event.target.closest(".card, .face-card");
+      if (!current) return;
+      const items = (scope) => [...scope.querySelectorAll(".card, .face-card")];
+      const horizontal = event.key === "ArrowLeft" || event.key === "ArrowRight";
+      let target;
+      if (horizontal) {
+        const siblings = items(current.parentElement);
+        target = siblings[siblings.indexOf(current) + (event.key === "ArrowRight" ? 1 : -1)];
+      } else {
+        const lists = [...document.querySelectorAll(".track, .grid")];
+        const here = lists.indexOf(current.parentElement);
+        const index = items(current.parentElement).indexOf(current);
+        const other = lists[here + (event.key === "ArrowDown" ? 1 : -1)];
+        if (other) target = items(other)[Math.min(index, items(other).length - 1)];
+      }
+      if (target) {
+        event.preventDefault();
+        target.focus({ preventScroll: true });
+        target.scrollIntoView({ block: "nearest", inline: "nearest", behavior: reduceMotion ? "auto" : "smooth" });
+      }
+    });
+
+    render();
+  </script>
+</body>
+</html>
