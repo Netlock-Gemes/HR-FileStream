@@ -1,1 +1,1 @@
-web: python -m FileStream
+web: cd backend && python -m FileStream

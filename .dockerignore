@@ -10,9 +10,14 @@ __pycache__
 .env.*
 
 streambot.log
+**/streambot.log*
 
 README.md
 Procfile
 app.json
 
 data
+
+web/node_modules
+web/.next
+web/out

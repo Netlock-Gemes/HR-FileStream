@@ -21,6 +21,35 @@ If you encounter any bugs or need assistance, feel free to reach out to us via T
 
 Thank you for using **HRWells' File Stream Bot**!
 
+## Project layout
+
+The bot and the website live in separate folders and ship as one Docker image.
+
+| Folder | What it holds |
+| --- | --- |
+| `backend/` | Python: the Telegram bot, file streaming (`/dl`), the JSON API, login, and the Stremio addon. It also serves the built website. |
+| `web/` | The website: a Next.js app exported to static files (`web/out`). Viewer site, player, login and dashboard. |
+
+`docker compose up -d --build` builds the website first, then the Python image, and copies `web/out` in. Nothing but Python runs in the container.
+
+### Working on the website
+
+```bash
+cd web
+npm install
+npm run dev          # http://localhost:3000, forwards API calls to the backend on :8080
+npm run build        # writes web/out, which the backend serves
+```
+
+Set `BACKEND_URL` if the backend isn't on `http://127.0.0.1:8080`. Run the backend from `backend/` with `python -m FileStream`.
+
+### Browsing features
+
+- Browse (`/browse`) pages through the whole library with numbered pages (12 to 96 per page) and a jump-to-page box.
+- Sort by newest, oldest, title A to Z or Z to A, longest, shortest, largest or smallest file, or shuffled. A shuffle keeps its order across pages until you choose Shuffle again.
+- Filter by catalog, length, quality, watched state, date added, tags, cast and channel. Filters, sort and page live in the address, so links and the back button keep them.
+- Home has a random row with its own shuffle button, and the dice in the top bar opens a random title.
+
 ## Library, dashboard and addon
 
 Only the accounts in `AUTH_USERS` can use the bot, and it works only in channels listed on the dashboard's Channels page. Links that were already shared keep working.

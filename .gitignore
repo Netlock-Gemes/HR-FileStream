@@ -131,3 +131,11 @@ streambot.log.*
 
 # Bot session and poster cache
 data/
+
+# Website build output
+web/node_modules/
+web/.next/
+web/out/
+web/next-env.d.ts
+!web/lib/
+web/*.tsbuildinfo
