@@ -110,10 +110,10 @@ export function Media({ overview }: { overview?: Overview }) {
         ) : items.length === 0 ? (
           <Empty title="No videos match">Change the search or filters.</Empty>
         ) : (
-          <table className="w-full border-t border-ink text-left">
+          <table className="w-full table-fixed border-t border-ink text-left">
             <thead className="data text-muted">
               <tr className="border-b border-line">
-                <th className="w-10 py-2">
+                <th className="w-8 py-2">
                   <input
                     type="checkbox"
                     aria-label="Select all on this page"
@@ -126,10 +126,11 @@ export function Media({ overview }: { overview?: Overview }) {
                     className="size-4 accent-[var(--color-signal)]"
                   />
                 </th>
-                <th className="py-2 font-normal" colSpan={2}>Video</th>
-                <th className="hidden py-2 font-normal lg:table-cell">Cast</th>
-                <th className="hidden py-2 font-normal md:table-cell">Length</th>
-                <th className="hidden py-2 pr-2 text-right font-normal md:table-cell">Size</th>
+                <th className="w-[104px] py-2 font-normal md:w-[132px]">Video</th>
+                <th className="py-2 font-normal" />
+                <th className="hidden w-[24%] py-2 font-normal lg:table-cell">Cast</th>
+                <th className="hidden w-20 py-2 font-normal md:table-cell">Length</th>
+                <th className="hidden w-20 py-2 pr-2 text-right font-normal md:table-cell">Size</th>
               </tr>
             </thead>
             <tbody>

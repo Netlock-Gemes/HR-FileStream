@@ -50,7 +50,7 @@ export default function Dashboard() {
       <aside className="sticky top-0 z-30 border-b border-line bg-bg pt-[env(safe-area-inset-top,0px)] md:h-dvh md:border-r md:border-b-0">
         <div className="flex h-14 items-center gap-3 px-4 md:h-16 md:px-5">
           <Logo />
-          <span className="data text-muted">Library</span>
+          <span className="data whitespace-nowrap text-muted">Library</span>
         </div>
         <nav className="no-scrollbar flex gap-1 overflow-x-auto px-3 pb-2 md:flex-col md:px-3 md:pb-0" aria-label="Dashboard">
           {TABS.map(({ id, label, icon: Icon }) => (

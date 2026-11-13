@@ -38,6 +38,16 @@
     font-size: 15px;
     line-height: 1.5;
     -webkit-font-smoothing: antialiased;
+    /* Telegram names often have no spaces ("Film.2014.1080p.BluRay..."): let them break
+       instead of pushing their column, and the whole page, wider than a phone */
+    overflow-wrap: anywhere;
+    /* Last line of defence: nothing may scroll the page sideways */
+    overflow-x: clip;
+  }
+  /* A grid with no explicit columns gets one that fits the screen, not its widest child.
+     Utilities like grid-cols-3 sit in a later layer and still win. */
+  .grid {
+    grid-template-columns: minmax(0, 1fr);
   }
   ::selection {
     background: var(--color-signal);
@@ -131,14 +141,16 @@
   display: inline-flex;
   align-items: center;
   gap: 0.4rem;
-  height: 34px;
-  padding: 0 0.75rem;
+  min-height: 34px;
+  max-width: 100%;
+  padding: 0.3rem 0.75rem;
   border-radius: 4px;
   background: var(--color-paper);
   box-shadow: inset 0 0 0 1px var(--color-line);
   font-size: 0.86rem;
   font-weight: 600;
-  white-space: nowrap;
+  line-height: 1.25;
+  text-align: left;
   transition: box-shadow 120ms, background-color 120ms;
   &[aria-pressed="true"] { background: var(--color-signal); box-shadow: inset 0 0 0 1px var(--color-signal); }
   @media (hover: hover) and (pointer: fine) {

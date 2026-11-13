@@ -166,7 +166,7 @@ function TitleView({ id, autoStart, startOverParam }: { id: string; autoStart: b
             {data.tags.length > 0 && (
               <div className="mt-5 flex flex-wrap gap-1.5">
                 {data.tags.map((tag) => (
-                  <Link key={tag} href={`/browse?tag=${encodeURIComponent(tag)}`} className="chip h-8">
+                  <Link key={tag} href={`/browse?tag=${encodeURIComponent(tag)}`} className="chip min-h-8">
                     <span className="text-muted">#</span>
                     {tag}
                   </Link>

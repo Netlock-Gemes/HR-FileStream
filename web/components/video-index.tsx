@@ -152,7 +152,7 @@ export function VideoIndex({ fixed = {}, hide = [], defaultSort = "newest", keep
         {active.length > 0 && (
           <div className="mb-3 flex flex-wrap items-center gap-1.5">
             {active.map((filter) => (
-              <button key={filter.key} onClick={() => update(filter.clear)} className="chip h-8 bg-signal-soft shadow-none hover:shadow-[inset_0_0_0_1px_var(--color-ink)]" aria-label={`Remove filter ${filter.label}`}>
+              <button key={filter.key} onClick={() => update(filter.clear)} className="chip min-h-8 bg-signal-soft shadow-none hover:shadow-[inset_0_0_0_1px_var(--color-ink)]" aria-label={`Remove filter ${filter.label}`}>
                 {filter.label} <X className="size-3.5" />
               </button>
             ))}
@@ -426,14 +426,15 @@ function Select({
 
 function ListView({ items }: { items: Card[] }) {
   return (
-    <table className="w-full border-t border-ink text-left">
+    <table className="w-full table-fixed border-t border-ink text-left">
       <thead className="data hidden text-muted md:table-header-group">
         <tr className="border-b border-line">
-          <th className="py-2 font-normal" colSpan={2}>Title</th>
-          <th className="py-2 font-normal">Length</th>
-          <th className="py-2 font-normal">Quality</th>
-          <th className="hidden py-2 font-normal xl:table-cell">Size</th>
-          <th className="py-2 pr-1 text-right font-normal">Added</th>
+          <th className="w-[140px] py-2 font-normal">Title</th>
+          <th className="py-2 font-normal" />
+          <th className="w-24 py-2 font-normal">Length</th>
+          <th className="w-20 py-2 font-normal">Quality</th>
+          <th className="hidden w-24 py-2 font-normal xl:table-cell">Size</th>
+          <th className="w-28 py-2 pr-1 text-right font-normal">Added</th>
         </tr>
       </thead>
       <tbody>
