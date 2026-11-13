@@ -1,6 +1,7 @@
 "use client";
 
 import {
+  FastForward,
   Gauge,
   Loader2,
   Maximize,
@@ -20,6 +21,10 @@ import { clock } from "@/lib/format";
 const SKIP = 10;
 const HIDE_AFTER = 2600;
 const SPEEDS = [0.5, 0.75, 1, 1.25, 1.5, 1.75, 2];
+const HOLD_MS = 450;
+const HOLD_SPEED = 2;
+// A finger that moves further than this is scrolling or swiping, not holding
+const HOLD_SLOP = 12;
 
 function recall(key: string) {
   try {
@@ -65,6 +70,11 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastTap = useRef(0);
+  // Press and hold on the picture plays at 2x until release, like YouTube
+  const holdTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
+  const holdFrom = useRef<{ x: number; y: number } | null>(null);
+  const held = useRef<number | null>(null);
+  const [boost, setBoost] = useState(false);
   const pendingRef = useRef<number | null>(null);
 
   const [playing, setPlaying] = useState(false);
@@ -252,6 +262,42 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
     tapTimer.current = setTimeout(toggle, 240);
   };
 
+  const startHold = (event: React.PointerEvent) => {
+    const element = video.current;
+    if (!element || element.paused || (event.pointerType === "mouse" && event.button !== 0)) return;
+    holdFrom.current = { x: event.clientX, y: event.clientY };
+    clearTimeout(holdTimer.current);
+    holdTimer.current = setTimeout(() => {
+      held.current = element.playbackRate;
+      element.playbackRate = Math.max(HOLD_SPEED, element.playbackRate);
+      setBoost(true);
+      clearTimeout(tapTimer.current);
+      clearTimeout(hideTimer.current);
+      setControls(false);
+      setSpeedMenu(false);
+      navigator.vibrate?.(12);
+    }, HOLD_MS);
+  };
+
+  const moveHold = (event: React.PointerEvent) => {
+    const from = holdFrom.current;
+    if (from && held.current === null && Math.hypot(event.clientX - from.x, event.clientY - from.y) > HOLD_SLOP) {
+      clearTimeout(holdTimer.current);
+      holdFrom.current = null;
+    }
+  };
+
+  /** Ends a hold. Returns true when the press was a hold, so it doesn't also count as a tap. */
+  const endHold = () => {
+    clearTimeout(holdTimer.current);
+    holdFrom.current = null;
+    if (held.current === null) return false;
+    if (video.current) video.current.playbackRate = held.current;
+    held.current = null;
+    setBoost(false);
+    return true;
+  };
+
   const shown = drag ?? target ?? time;
   const visible = controls || !playing || speedMenu;
   const VolumeIcon = muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
@@ -275,7 +321,16 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
         playsInline
         crossOrigin="anonymous"
         className="absolute inset-0 size-full object-contain"
-        onPointerUp={onScreenTap}
+        onPointerDown={startHold}
+        onPointerMove={moveHold}
+        onPointerUp={(event) => {
+          if (!endHold()) onScreenTap(event);
+        }}
+        onPointerCancel={endHold}
+        onPointerLeave={endHold}
+        // A long press would otherwise open the browser's save-video menu
+        onContextMenu={(event) => event.preventDefault()}
+        style={{ WebkitTouchCallout: "none" }}
         onPlay={() => {
           setPlaying(true);
           setStarted(true);
@@ -336,6 +391,12 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
       {waiting && started && !failed && (
         <span className="pointer-events-none absolute inset-0 grid place-items-center">
           <Loader2 className="size-12 animate-spin text-white/90" strokeWidth={1.6} />
+        </span>
+      )}
+
+      {boost && (
+        <span className="data pointer-events-none absolute top-4 left-1/2 flex -translate-x-1/2 animate-[fade-in_120ms_ease-out] items-center gap-1.5 rounded-full bg-black/65 px-3.5 py-1.5 text-[0.85rem] text-white">
+          {HOLD_SPEED}× <FastForward className="size-4 fill-current" />
         </span>
       )}
 
