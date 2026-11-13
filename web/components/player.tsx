@@ -65,6 +65,7 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
   const hideTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const tapTimer = useRef<ReturnType<typeof setTimeout>>(undefined);
   const lastTap = useRef(0);
+  const pendingRef = useRef<number | null>(null);
 
   const [playing, setPlaying] = useState(false);
   const [started, setStarted] = useState(false);
@@ -77,6 +78,8 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
   const [speed, setSpeed] = useState(1);
   const [controls, setControls] = useState(true);
   const [drag, setDrag] = useState<number | null>(null);
+  // Where a seek is headed. The video reports its old time until the seek lands, so the bar shows this meanwhile.
+  const [target, setTarget] = useState<number | null>(null);
   const [hover, setHover] = useState<{ x: number; time: number } | null>(null);
   const [remaining, setRemaining] = useState(false);
   const [fullscreen, setFullscreen] = useState(false);
@@ -118,7 +121,10 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
     (seconds: number) => {
       const element = video.current;
       if (!element || !Number.isFinite(element.duration)) return;
-      element.currentTime = Math.min(Math.max(element.currentTime + seconds, 0), element.duration);
+      const next = Math.min(Math.max((element.seeking && pendingRef.current !== null ? pendingRef.current : element.currentTime) + seconds, 0), element.duration);
+      pendingRef.current = next;
+      setTarget(next);
+      element.currentTime = next;
       flash(seconds > 0 ? `+${seconds}s` : `${seconds}s`, seconds > 0 ? "right" : "left");
       showControls();
     },
@@ -191,7 +197,10 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
       } else if (key === "f") {
         toggleFullscreen();
       } else if (/^[0-9]$/.test(key) && Number.isFinite(element.duration)) {
-        element.currentTime = (element.duration * Number(key)) / 10;
+        const goal = (element.duration * Number(key)) / 10;
+        pendingRef.current = goal;
+        setTarget(goal);
+        element.currentTime = goal;
       } else return;
       showControls();
     };
@@ -243,7 +252,7 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
     tapTimer.current = setTimeout(toggle, 240);
   };
 
-  const shown = drag ?? time;
+  const shown = drag ?? target ?? time;
   const visible = controls || !playing || speedMenu;
   const VolumeIcon = muted || volume === 0 ? VolumeX : volume < 0.5 ? Volume1 : Volume2;
 
@@ -280,7 +289,14 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
         onWaiting={() => setWaiting(true)}
         onPlaying={() => setWaiting(false)}
         onCanPlay={() => setWaiting(false)}
-        onSeeked={() => setWaiting(false)}
+        onSeeked={(event) => {
+          setWaiting(false);
+          if (!event.currentTarget.seeking) {
+            pendingRef.current = null;
+            setTarget(null);
+            setTime(event.currentTarget.currentTime);
+          }
+        }}
         onLoadedMetadata={(event) => {
           const element = event.currentTarget;
           setDuration(element.duration);
@@ -362,8 +378,12 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
           onPointerLeave={() => setHover(null)}
           onPointerUp={(event) => {
             if (drag === null) return;
-            const target = timeAt(event.clientX).time;
-            if (video.current && Number.isFinite(target)) video.current.currentTime = target;
+            const goal = timeAt(event.clientX).time;
+            if (video.current && Number.isFinite(goal)) {
+              pendingRef.current = goal;
+              setTarget(goal);
+              video.current.currentTime = goal;
+            }
             setDrag(null);
             showControls();
           }}
