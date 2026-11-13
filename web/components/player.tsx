@@ -47,13 +47,18 @@ type Props = {
   onEnded?: () => void;
   onLoaded?: (video: HTMLVideoElement) => void;
   onFailed?: () => void;
+  /** Starts playing as soon as it can (the click that opened it counts as the gesture). */
+  autoPlay?: boolean;
+  /** Keeps the box the page already gave it instead of taking the film's own shape. */
+  inline?: boolean;
+  children?: React.ReactNode;
 };
 
 /**
  * The film is the one dark thing on the page. Controls hide while it plays; the seek bar
  * shows what's buffered and seeks only on release, so dragging doesn't fire a burst of range requests.
  */
-export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, poster, title, onTime, onPause, onEnded, onLoaded, onFailed }, ref) {
+export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, poster, title, onTime, onPause, onEnded, onLoaded, onFailed, autoPlay = false, inline = false, children }, ref) {
   const stage = useRef<HTMLDivElement>(null);
   const video = useRef<HTMLVideoElement>(null);
   const scrub = useRef<HTMLDivElement>(null);
@@ -245,8 +250,10 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
   return (
     <div
       ref={stage}
-      className={`group/stage relative mx-auto w-full overflow-hidden bg-black text-white select-none ${fullscreen ? "h-full" : "max-h-[calc(100dvh-8rem)]"} ${visible ? "" : "cursor-none"}`}
-      style={fullscreen ? undefined : { aspectRatio: ratio }}
+      className={`group/stage relative mx-auto w-full overflow-hidden bg-black text-white select-none ${
+        fullscreen ? "h-full" : inline ? "aspect-video" : "max-h-[calc(100dvh-8rem)]"
+      } ${visible ? "" : "cursor-none"}`}
+      style={fullscreen || inline ? undefined : { aspectRatio: ratio }}
       onPointerMove={(event) => event.pointerType !== "touch" && showControls()}
       onPointerLeave={(event) => event.pointerType !== "touch" && playing && setControls(false)}
     >
@@ -255,6 +262,7 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
         src={src}
         poster={poster ?? undefined}
         preload="metadata"
+        autoPlay={autoPlay}
         playsInline
         crossOrigin="anonymous"
         className="absolute inset-0 size-full object-contain"
@@ -453,6 +461,8 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
           </div>
         </div>
       </div>
+
+      {children}
 
       {failed && (
         <div className="absolute inset-0 grid place-items-center bg-black/85 p-6 text-center">

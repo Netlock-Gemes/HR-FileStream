@@ -79,9 +79,9 @@ export function Hero({ items }: { items: HeroCard[] }) {
             {current.cast.length > 0 && <p className="mt-2 text-[0.95rem] text-muted">With {current.cast.slice(0, 3).join(", ")}</p>}
             {current.description && <p className="mt-3 line-clamp-3 max-w-[52ch] text-[0.98rem] leading-relaxed">{current.description}</p>}
             <div className="mt-6 flex flex-wrap gap-2">
-              <a href={`/watch/${current.id}`} className="btn btn-signal h-12 px-6 text-base">
+              <Link href={`/title?id=${current.id}&play=1`} className="btn btn-signal h-12 px-6 text-base">
                 <Play className="size-[18px] fill-current" /> Play
-              </a>
+              </Link>
               <Link href={`/title?id=${current.id}`} className="btn btn-line h-12 px-5 text-base">
                 Details
               </Link>

@@ -38,7 +38,7 @@ export default function HomePage() {
           <Row title="Continue watching">
             {data.continue.map((card) => (
               <RowItem key={card.id} wide>
-                <TitleCard card={card} href={`/watch/${card.id}`} />
+                <TitleCard card={card} href={`/title?id=${card.id}&play=1`} />
               </RowItem>
             ))}
           </Row>
