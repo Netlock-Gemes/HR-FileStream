@@ -305,12 +305,22 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
   return (
     <div
       ref={stage}
-      className={`group/stage relative mx-auto w-full overflow-hidden bg-black text-white select-none ${
+      tabIndex={-1}
+      className={`group/stage relative mx-auto w-full overflow-hidden bg-black text-white outline-none select-none focus-visible:outline-none ${
         fullscreen ? "h-full" : inline ? "aspect-video" : "max-h-[calc(100dvh-8rem)]"
       } ${visible ? "" : "cursor-none"}`}
       style={fullscreen || inline ? undefined : { aspectRatio: ratio }}
       onPointerMove={(event) => event.pointerType !== "touch" && showControls()}
       onPointerLeave={(event) => event.pointerType !== "touch" && playing && setControls(false)}
+      // A mouse or touch press shouldn't leave focus on a control: otherwise the next key press
+      // makes the browser draw a focus outline on it. Keyboard (Tab) focus still shows as usual.
+      onPointerUp={(event) => {
+        if ((event.target as HTMLElement).closest('[role="menu"]')) return;
+        setTimeout(() => {
+          const active = document.activeElement;
+          if (active && active !== stage.current && stage.current?.contains(active)) stage.current.focus({ preventScroll: true });
+        }, 0);
+      }}
     >
       <video
         ref={video}
@@ -426,7 +436,7 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
           aria-valuemax={Math.round(duration || 0)}
           aria-valuenow={Math.round(shown)}
           aria-valuetext={`${clock(shown)} of ${clock(duration)}`}
-          className="group/seek relative flex h-6 cursor-pointer touch-none items-center"
+          className="group/seek relative flex h-6 cursor-pointer touch-none items-center outline-none focus:outline-none focus-visible:outline-none"
           onPointerDown={(event) => {
             event.currentTarget.setPointerCapture(event.pointerId);
             setDrag(timeAt(event.clientX).time);
