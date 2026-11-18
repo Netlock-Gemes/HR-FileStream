@@ -4,6 +4,7 @@ import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { ArrowDown, ArrowUp, Camera, Check, Copy, Download, ExternalLink, Plus, RefreshCw, RotateCcw, Trash2 } from "lucide-react";
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
+import { Dropdown } from "@/components/dropdown";
 import { Failed } from "@/components/states";
 import { api } from "@/lib/api";
 import { SORT_LABELS } from "@/lib/format";
@@ -241,11 +242,14 @@ function CatalogRow({ catalog, sorts, channels, onUp, onDown }: { catalog: Catal
             <input id={`name-${catalog.id}`} value={draft.name} onChange={(event) => setDraft({ ...draft, name: event.target.value })} className={input} />
           </Field>
           <Field label="Order" htmlFor={`sort-${catalog.id}`}>
-            <select id={`sort-${catalog.id}`} value={draft.sort} onChange={(event) => setDraft({ ...draft, sort: event.target.value })} className={input}>
-              {sorts.map((sort) => (
-                <option key={sort} value={sort}>{SORT_LABELS[sort] ?? sort}</option>
-              ))}
-            </select>
+            <Dropdown
+              id={`sort-${catalog.id}`}
+              label="Order"
+              value={draft.sort}
+              onChange={(sort) => setDraft({ ...draft, sort })}
+              options={sorts.map((sort) => ({ value: sort, label: SORT_LABELS[sort] ?? sort }))}
+              className={`${input} flex pr-9 aria-expanded:shadow-[inset_0_0_0_2px_var(--color-ink)]`}
+            />
           </Field>
           {!catalog.all && (
             <>

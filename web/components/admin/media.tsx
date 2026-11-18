@@ -1,9 +1,10 @@
 "use client";
 
 import { keepPreviousData, useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Check, ChevronDown, Copy, ExternalLink, ImageUp, Play, RotateCcw, Search, Send, Trash2, X } from "lucide-react";
+import { Check, Copy, ExternalLink, ImageUp, Play, RotateCcw, Search, Send, Trash2, X } from "lucide-react";
 import { useEffect, useMemo, useState } from "react";
 import { toast } from "sonner";
+import { Dropdown } from "@/components/dropdown";
 import { Still } from "@/components/cards";
 import { Sheet } from "@/components/sheet";
 import { Empty, Failed } from "@/components/states";
@@ -194,15 +195,13 @@ function PagerButtons({ page, pages, total, onPage }: { page: number; pages: num
 
 function Picker({ label, value, options, onChange }: { label: string; value: string; options: { value: string; label: string }[]; onChange: (value: string) => void }) {
   return (
-    <label className="relative inline-flex h-9 items-center rounded-[4px] bg-paper shadow-[inset_0_0_0_1px_var(--color-line)] focus-within:shadow-[inset_0_0_0_1px_var(--color-ink)]">
-      <span className="sr-only">{label}</span>
-      <select value={value} onChange={(event) => onChange(event.target.value)} className="h-full max-w-48 cursor-pointer appearance-none truncate bg-transparent pr-8 pl-3 text-[0.86rem]! font-semibold focus:outline-none">
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>{option.label}</option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2 size-4 text-muted" />
-    </label>
+    <Dropdown
+      label={label}
+      value={value}
+      options={options}
+      onChange={onChange}
+      className="inline-flex h-9 max-w-48 rounded-[4px] bg-paper pr-8 pl-3 text-[0.86rem] font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-ink)] aria-expanded:shadow-[inset_0_0_0_1px_var(--color-ink)]"
+    />
   );
 }
 
@@ -227,12 +226,14 @@ function BulkBar({ count, catalogs, busy, onAction, onClear }: { count: number; 
         <button disabled={busy || !castText.trim()} className="btn h-9 min-h-0 bg-signal px-3 text-ink">Add</button>
       </form>
       <div className="flex items-center gap-1">
-        <select value={catalog} onChange={(event) => setCatalog(event.target.value)} className="h-9 rounded-[4px] bg-white/10 px-2 text-[0.86rem]! focus:outline-none" aria-label="Catalog">
-          <option value="">Catalog</option>
-          {catalogs.filter((item) => !item.all).map((item) => (
-            <option key={item.id} value={item.id} className="text-ink">{item.name}</option>
-          ))}
-        </select>
+        <Dropdown
+          label="Catalog"
+          placeholder="Catalog"
+          value={catalog}
+          onChange={setCatalog}
+          options={catalogs.filter((item) => !item.all).map((item) => ({ value: item.id, label: item.name }))}
+          className="inline-flex h-9 max-w-44 rounded-[4px] bg-white/10 pr-8 pl-2.5 text-[0.86rem] hover:bg-white/15"
+        />
         <button disabled={busy || !catalog} onClick={() => onAction("add_catalog", catalog)} className="btn h-9 min-h-0 bg-white/10 px-3">Put in</button>
         <button disabled={busy || !catalog} onClick={() => onAction("remove_catalog", catalog)} className="btn h-9 min-h-0 bg-white/10 px-3">Take out</button>
       </div>

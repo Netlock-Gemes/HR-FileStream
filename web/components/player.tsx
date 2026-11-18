@@ -473,7 +473,7 @@ export const Player = forwardRef<PlayerHandle, Props>(function Player({ src, pos
           />
           {(hover || drag !== null) && duration > 0 && (
             <span
-              className="data pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-[3px] bg-white px-1.5 py-0.5 text-[0.75rem] text-ink"
+              className="data pointer-events-none absolute bottom-7 -translate-x-1/2 rounded-[3px] bg-white px-1.5 py-0.5 text-[0.75rem] text-[#0c0c0c]"
               style={{ left: drag !== null ? `${(drag / duration) * 100}%` : hover!.x }}
             >
               {clock(drag ?? hover!.time)}

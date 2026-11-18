@@ -3,8 +3,9 @@
 import { keepPreviousData, useQuery, useQueryClient } from "@tanstack/react-query";
 import Link from "next/link";
 import { usePathname, useRouter, useSearchParams } from "next/navigation";
-import { ChevronDown, ChevronLeft, ChevronRight, LayoutGrid, List, RefreshCw, SlidersHorizontal, X } from "lucide-react";
+import { ChevronLeft, ChevronRight, LayoutGrid, List, RefreshCw, SlidersHorizontal, X } from "lucide-react";
 import { useEffect, useMemo, useRef, useState } from "react";
+import { Dropdown } from "@/components/dropdown";
 import { api, qs } from "@/lib/api";
 import { BrowseState, filterCount, newSeed, OPTIONS, readState, writeState } from "@/lib/browse";
 import { ago, bytes, plural, quality, runtime, SORT_LABELS } from "@/lib/format";
@@ -404,21 +405,13 @@ function Select({
   className?: string;
 }) {
   return (
-    <label className={`relative ${className || "inline-flex"} h-[34px] items-center rounded-[4px] bg-paper shadow-[inset_0_0_0_1px_var(--color-line)] focus-within:shadow-[inset_0_0_0_1px_var(--color-ink)]`}>
-      <span className="sr-only">{label}</span>
-      <select
-        value={value}
-        onChange={(event) => onChange(event.target.value)}
-        className="h-full cursor-pointer appearance-none bg-transparent pr-8 pl-3 text-[0.86rem]! font-semibold focus:outline-none"
-      >
-        {options.map((option) => (
-          <option key={option.value} value={option.value}>
-            {option.label}
-          </option>
-        ))}
-      </select>
-      <ChevronDown className="pointer-events-none absolute right-2 size-4 text-muted" />
-    </label>
+    <Dropdown
+      label={label}
+      value={value}
+      options={options}
+      onChange={onChange}
+      className={`${className || "inline-flex"} h-[34px] rounded-[4px] bg-paper pr-8 pl-3 text-[0.86rem] font-semibold shadow-[inset_0_0_0_1px_var(--color-line)] hover:shadow-[inset_0_0_0_1px_var(--color-ink)] aria-expanded:shadow-[inset_0_0_0_1px_var(--color-ink)]`}
+    />
   );
 }
 
