@@ -216,7 +216,7 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
                     aria-selected={isSelected}
                     onPointerMove={() => setActive(index)}
                     onClick={() => choose(option)}
-                    className={`flex min-h-11 cursor-pointer items-center gap-1.5 rounded-[4px] py-2 pr-1.5 pl-2.5 text-[0.86rem] leading-snug font-semibold ${
+                    className={`flex min-h-11 cursor-pointer items-center gap-1.5 rounded-[4px] py-2 pr-1.5 pl-2.5 text-[0.8rem] leading-snug font-semibold ${
                       index === active ? "bg-sunk text-ink" : isSelected ? "text-ink" : "text-muted"
                     }`}
                   >
