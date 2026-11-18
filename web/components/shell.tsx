@@ -2,9 +2,10 @@
 
 import Link from "next/link";
 import { usePathname, useRouter } from "next/navigation";
-import { Bookmark, Compass, Dices, House, LayoutDashboard, LogOut, Search } from "lucide-react";
+import { Bookmark, Compass, Dices, House, LayoutDashboard, LogOut, Monitor, Moon, Search, Sun } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { useMe, useShuffle } from "@/lib/hooks";
+import { setTheme, useTheme, type ThemeChoice } from "@/lib/theme";
 
 const NAV = [
   { href: "/", label: "Home", icon: House },
@@ -168,6 +169,7 @@ function AccountMenu() {
               </button>
             </form>
           )}
+          <ThemeSwitch />
           <form action="/logout" method="post">
             <button role="menuitem" className="flex w-full items-center gap-2.5 rounded-[4px] px-3 py-2.5 text-left text-[0.94rem] font-semibold hover:bg-sunk">
               <LogOut className="size-4" /> Log out
@@ -175,6 +177,35 @@ function AccountMenu() {
           </form>
         </div>
       )}
+    </div>
+  );
+}
+
+const THEMES: { value: ThemeChoice; label: string; icon: typeof Sun }[] = [
+  { value: "light", label: "Light", icon: Sun },
+  { value: "dark", label: "Dark", icon: Moon },
+  { value: "system", label: "System", icon: Monitor },
+];
+
+function ThemeSwitch() {
+  const theme = useTheme();
+  return (
+    <div className="my-1 border-y border-line px-3 py-2.5">
+      <p className="data text-faint">Theme</p>
+      <div role="radiogroup" aria-label="Theme" className="mt-2 grid grid-cols-3 gap-1 rounded-[4px] bg-sunk p-0.5">
+        {THEMES.map(({ value, label, icon: Icon }) => (
+          <button
+            key={value}
+            role="radio"
+            aria-checked={theme === value}
+            onClick={() => setTheme(value)}
+            className="flex h-12 flex-col items-center justify-center gap-1 whitespace-nowrap rounded-[3px] text-[0.78rem] font-semibold text-muted transition-colors hover:text-ink aria-checked:bg-paper aria-checked:text-ink aria-checked:shadow-[inset_0_0_0_1px_var(--color-line-strong)]"
+          >
+            <Icon className="size-4" strokeWidth={2} />
+            {label}
+          </button>
+        ))}
+      </div>
     </div>
   );
 }

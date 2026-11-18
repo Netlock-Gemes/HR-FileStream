@@ -43,7 +43,7 @@ export function Providers({ children }: { children: React.ReactNode }) {
         position="bottom-center"
         offset={{ bottom: "calc(84px + env(safe-area-inset-bottom, 0px))" }}
         toastOptions={{
-          style: { background: "#0c0c0c", color: "#fafaf8", border: "0", borderRadius: "4px", fontFamily: "var(--font-sans)" },
+          style: { background: "var(--color-ink)", color: "var(--color-bg)", border: "0", borderRadius: "4px", fontFamily: "var(--font-sans)" },
         }}
       />
     </QueryClientProvider>
