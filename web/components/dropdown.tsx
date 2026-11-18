@@ -65,7 +65,8 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
       if (!rect) return;
       const vw = window.innerWidth;
       const vh = window.visualViewport?.height ?? window.innerHeight;
-      const width = Math.min(Math.max(rect.width, 200), vw - EDGE * 2);
+      // Exactly as wide as its trigger, so the list reads as part of the control
+      const width = Math.min(rect.width, vw - EDGE * 2);
       const left = Math.min(Math.max(EDGE, rect.left), vw - width - EDGE);
       const below = vh - rect.bottom - GAP - EDGE;
       const above = rect.top - GAP - EDGE;
@@ -153,7 +154,18 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
         }}
         className={`relative min-w-0 items-center text-left ${className}`}
       >
-        <span className={`min-w-0 truncate ${selected ? "" : "text-faint"}`}>{selected?.label ?? placeholder ?? ""}</span>
+        {/* Every label sits invisibly in the same cell, so the control is as wide as its longest
+            option (as a native select is) and the list below can match it exactly */}
+        <span className="grid min-w-0">
+          {[placeholder, ...options.map((option) => option.label)].map((text, index) =>
+            text ? (
+              <span key={index} aria-hidden className="invisible col-start-1 row-start-1 h-0 overflow-hidden whitespace-nowrap">
+                {text}
+              </span>
+            ) : null,
+          )}
+          <span className={`col-start-1 row-start-1 min-w-0 truncate ${selected ? "" : "text-faint"}`}>{selected?.label ?? placeholder ?? ""}</span>
+        </span>
         <ChevronDown className={`pointer-events-none absolute right-2 size-4 opacity-60 transition-transform duration-150 ${open ? "rotate-180" : ""}`} />
       </button>
       {open &&
@@ -161,11 +173,11 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
         createPortal(
           <div
             ref={panel}
-            className="fixed z-[90] flex animate-[fade-in_120ms_ease-out] flex-col overflow-hidden rounded-[6px] border border-line bg-paper text-ink shadow-[0_16px_40px_-12px_rgb(0_0_0/0.35)]"
-            style={{ left: place.left, width: place.width, top: place.top, bottom: place.bottom, maxHeight: place.maxHeight }}
+            className="fixed z-[90] flex animate-[menu-in_150ms_var(--ease-out)] flex-col overflow-hidden rounded-[6px] border border-line bg-paper text-ink shadow-[0_16px_40px_-12px_rgb(0_0_0/0.35)]"
+            style={{ left: place.left, width: place.width, top: place.top, bottom: place.bottom, maxHeight: place.maxHeight, transformOrigin: place.top !== undefined ? "top center" : "bottom center" }}
           >
             {searchable && (
-              <label className="flex shrink-0 items-center gap-2 border-b border-line px-3">
+              <label className="flex shrink-0 items-center gap-2 border-b border-line px-2.5">
                 <Search className="size-4 shrink-0 text-faint" />
                 <input
                   ref={search}
@@ -191,7 +203,7 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
               tabIndex={-1}
               onKeyDown={searchable ? undefined : onKey}
               aria-activedescendant={!searchable && shown[active] ? `${listId}-${active}` : undefined}
-              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-1 outline-none"
+              className="min-h-0 flex-1 overflow-y-auto overscroll-contain p-0.5 outline-none"
             >
               {shown.map((option, index) => {
                 const isSelected = option.value === value;
@@ -204,7 +216,7 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
                     aria-selected={isSelected}
                     onPointerMove={() => setActive(index)}
                     onClick={() => choose(option)}
-                    className={`flex min-h-11 cursor-pointer items-center gap-2 rounded-[4px] px-3 py-2 text-[0.92rem] font-semibold ${
+                    className={`flex min-h-11 cursor-pointer items-center gap-1.5 rounded-[4px] py-2 pr-1.5 pl-2.5 text-[0.86rem] leading-snug font-semibold ${
                       index === active ? "bg-sunk text-ink" : isSelected ? "text-ink" : "text-muted"
                     }`}
                   >
@@ -213,7 +225,7 @@ export function Dropdown({ label, value, options, onChange, className = "", id, 
                   </li>
                 );
               })}
-              {shown.length === 0 && <li className="px-3 py-3 text-[0.9rem] text-faint">Nothing matches</li>}
+              {shown.length === 0 && <li className="px-2.5 py-3 text-[0.88rem] text-faint">Nothing matches</li>}
             </ul>
           </div>,
           document.body,
